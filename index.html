@@ -16,7 +16,8 @@
       <button type="button" data-camera="zoom-out" aria-label="Afastar" title="Afastar">➖</button>
       <output aria-live="polite">0 blocos</output>
     </nav>
-    <canvas id="world" aria-label="Mundo"></canvas>
+    <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the world is a keyboard-driven widget, which is what the application role announces -->
+    <canvas id="world" role="application" tabindex="0" aria-label="Mundo"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

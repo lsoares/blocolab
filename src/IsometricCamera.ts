@@ -17,6 +17,10 @@ export class IsometricCamera {
     this.targetQuarterTurns += 1
   }
 
+  countQuarterTurns() {
+    return this.targetQuarterTurns
+  }
+
   zoomIn() {
     this.targetZoom = Math.min(this.targetZoom * 1.25, 4)
   }
