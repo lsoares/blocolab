@@ -1,9 +1,11 @@
-import type { Axis, BoardSize, Spot } from '../stage/Grid.ts'
-import { findLinkedSides, type Route, turnToMeetNeighbours, walkRoute } from './Rails.ts'
+import type { Axis, BoardSize, Side, Spot } from '../stage/Grid.ts'
+import { aimPoints, findLinkedSides, type Route, turnToMeetNeighbours, walkRoute } from './Rails.ts'
 
 export type Piece =
   | { kind: 'track'; spot: Spot }
   | { kind: 'station' | 'tunnel'; spot: Spot; axis: Axis }
+  | { kind: 'bridge'; spot: Spot; axis: Axis }
+  | { kind: 'points'; spot: Spot; side: Side }
   | { kind: 'signal'; spot: Spot; axis: Axis; go: boolean }
   | { kind: 'tree'; spot: Spot }
 
@@ -47,6 +49,15 @@ export class Railway {
     const piece = this.findPieceAt(spot)
     if (piece?.kind !== 'signal') return
     this.change({ pieces: this.pieces.map((placed) => (placed === piece ? { ...piece, go: !piece.go } : placed)) })
+  }
+
+  turnPointsAt(spot: Spot) {
+    const piece = this.findPieceAt(spot)
+    if (piece?.kind !== 'points') return
+    const linked = findLinkedSides(this.pieces, spot)
+    if (linked.length < 2) return
+    const side = linked[(linked.indexOf(piece.side) + 1) % linked.length]
+    this.change({ pieces: this.pieces.map((placed) => (placed === piece ? { ...piece, side } : placed)) })
   }
 
   startOver() {
@@ -106,7 +117,7 @@ export class Railway {
   private change(changes: { pieces?: Piece[]; train?: Spot | null }) {
     if (this.stroke !== 'changed') this.undoable.push({ pieces: this.pieces, train: this.train })
     if (this.stroke === 'unchanged') this.stroke = 'changed'
-    this.pieces = turnToMeetNeighbours(changes.pieces ?? this.pieces)
+    this.pieces = aimPoints(turnToMeetNeighbours(changes.pieces ?? this.pieces))
     const train = changes.train === undefined ? this.train : (changes.train ?? undefined)
     this.train = train && this.isRailAt(train) ? train : undefined
   }
@@ -114,6 +125,7 @@ export class Railway {
 
 function isSamePiece(a: Piece, b: Piece) {
   if (a.kind !== b.kind) return false
-  if (a.kind === 'track' || a.kind === 'tree' || b.kind === 'track' || b.kind === 'tree') return true
+  if (a.kind === 'track' || a.kind === 'tree' || a.kind === 'points') return true
+  if (b.kind === 'track' || b.kind === 'tree' || b.kind === 'points') return true
   return a.axis === b.axis
 }
