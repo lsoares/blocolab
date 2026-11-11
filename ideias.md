@@ -24,6 +24,12 @@ a meio num `git stash`). O jogo passa a ser **como um kit de circuitos de encaix
   arrastar com outra peça decide para onde ela está virada; tocar num interruptor
   liga/desliga; a borracha apaga só o que toca.
 
+**Ajustes pedidos a ver o jogo** (feitos): as peças com duas pontas **viram-se sozinhas** para
+encostar aos fios que têm à volta; pôr uma peça **por cima** de outra substitui-a (um troço de
+fio arrastado só preenche casas vazias); ao passar o rato aparece o **nome** da peça e o estado
+(por exemplo "Lâmpada (acesa)"); a pilha parece mesmo uma pilha; **sem zoom**; o tabuleiro
+tem casas de ~46 px medidas a partir do ecrã, por isso ocupa o ecrã todo.
+
 **Desafios** (feitos): 7 objetivos seguidos, da lâmpada até "lâmpada, motor e campainha ao
 mesmo tempo". Cada um tem uma dica; o botão "Próximo desafio" só aparece ao conseguir e o
 progresso fica guardado no browser. O tabuleiro começa vazio em cada desafio.
