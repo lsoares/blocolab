@@ -6,7 +6,7 @@ test('the first challenge asks to light the lamp', async ({ page }) => {
 
   await circuit.open()
 
-  await expect(circuit.getChallenge()).toContainText('Desafio 1 de 12: Acende a lâmpada.')
+  await expect(circuit.getChallenge()).toContainText('Desafio 1 de 14: Acende a lâmpada.')
 })
 
 test('the next challenge waits until the goal is reached', async ({ page }) => {
@@ -52,7 +52,7 @@ test('the next challenge asks for the motor', async ({ page }) => {
 
   await circuit.getNextChallengeButton().click()
 
-  await expect(circuit.getChallenge()).toContainText('Desafio 2 de 12: Faz o motor rodar.')
+  await expect(circuit.getChallenge()).toContainText('Desafio 2 de 14: Faz o motor rodar.')
 })
 
 test('the challenge reached is remembered on the next visit', async ({ page }) => {
@@ -63,7 +63,7 @@ test('the challenge reached is remembered on the next visit', async ({ page }) =
 
   await circuit.reload()
 
-  await expect(circuit.getChallenge()).toContainText('Desafio 2 de 12')
+  await expect(circuit.getChallenge()).toContainText('Desafio 2 de 14')
 })
 
 test('a hard challenge can be skipped', async ({ page }) => {
@@ -72,7 +72,7 @@ test('a hard challenge can be skipped', async ({ page }) => {
 
   await circuit.getSkipButton().click()
 
-  await expect(circuit.getChallenge()).toContainText('Desafio 2 de 12: Faz o motor rodar.')
+  await expect(circuit.getChallenge()).toContainText('Desafio 2 de 14: Faz o motor rodar.')
 })
 
 test('the skip button gives way to the next button once the goal is reached', async ({ page }) => {

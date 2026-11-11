@@ -8,6 +8,7 @@ export type Challenge = {
     runningMotors?: number
     soundingBuzzers?: number
     maxBatteries?: number
+    everyLampAtLeast?: number
     lampsEachOnTheirOwnPath?: true
     lampsOneAfterTheOther?: true
     mainSwitch?: true
@@ -72,6 +73,16 @@ export const challenges: Challenge[] = [
     needs: { litLamps: 1, runningMotors: 1, soundingBuzzers: 1, mainSwitch: true },
   },
   {
+    goal: 'Faz a lâmpada brilhar mais forte do que com uma só pilha.',
+    hint: 'Duas pilhas uma a seguir à outra empurram a corrente com mais força.',
+    needs: { litLamps: 1, everyLampAtLeast: 1.5 },
+  },
+  {
+    goal: 'Acende duas lâmpadas, cada uma tão forte como se estivesse sozinha.',
+    hint: 'Em série as lâmpadas dividem a pilha e ficam fracas. Em paralelo cada uma recebe a pilha toda.',
+    needs: { litLamps: 2, everyLampAtLeast: 0.85 },
+  },
+  {
     goal: 'Faz um curto-circuito de propósito.',
     hint: 'Liga um fio direto de um lado da pilha ao outro. Vês que nada funciona? Numa pilha a sério isto aquece muito!',
     needs: { shortCircuit: true },
@@ -85,6 +96,7 @@ export function isMet(board: Board, { needs }: Challenge) {
     countWorking(board, 'motor') >= (needs.runningMotors ?? 0) &&
     countWorking(board, 'buzzer') >= (needs.soundingBuzzers ?? 0) &&
     pieces.filter((piece) => piece.kind === 'battery').length <= (needs.maxBatteries ?? Number.POSITIVE_INFINITY) &&
+    (needs.everyLampAtLeast === undefined || everyLitLampAtLeast(board, needs.everyLampAtLeast)) &&
     (!needs.lampsEachOnTheirOwnPath || lampsRelation(board) === 'each on their own path') &&
     (!needs.lampsOneAfterTheOther || lampsRelation(board) === 'one after the other') &&
     (!needs.mainSwitch || hasMainSwitch(board)) &&
@@ -123,4 +135,11 @@ function hasMainSwitch(board: Board) {
         board.withPieces(pieces.map((other) => (other === piece ? { ...piece, closed: false } : other))),
       ) === 0,
   )
+}
+
+function everyLitLampAtLeast(board: Board, strength: number) {
+  return board
+    .listPieces()
+    .filter((piece) => piece.kind === 'lamp' && board.isPoweredAt(piece.spot))
+    .every((lamp) => board.measureStrengthAt(lamp.spot) >= strength)
 }

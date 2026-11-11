@@ -190,7 +190,7 @@ describe('Challenges about how the pieces are joined', () => {
     const board = new Board({ columns: 8, rows: 6 })
     draw(board, ['wBw', 'www'])
 
-    const met = isMet(board, challenges[11])
+    const met = isMet(board, challenges[13])
 
     assert.equal(met, true)
   })
@@ -199,7 +199,45 @@ describe('Challenges about how the pieces are joined', () => {
     const board = new Board({ columns: 8, rows: 6 })
     draw(board, ['wBw', 'w.w', 'wLw'])
 
+    const met = isMet(board, challenges[13])
+
+    assert.equal(met, false)
+  })
+})
+
+describe('Challenges about how bright the lamps are', () => {
+  test('a lamp on two batteries one after the other meets the brighter lamp challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBBw', 'w..w', 'wLww'])
+
     const met = isMet(board, challenges[11])
+
+    assert.equal(met, true)
+  })
+
+  test('a lamp on one battery does not meet the brighter lamp challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const met = isMet(board, challenges[11])
+
+    assert.equal(met, false)
+  })
+
+  test('two lamps each on their own path meet the full strength challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'wLw', 'wLw'])
+
+    const met = isMet(board, challenges[12])
+
+    assert.equal(met, true)
+  })
+
+  test('two lamps one after the other do not meet the full strength challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBww', 'w..w', 'wLLw'])
+
+    const met = isMet(board, challenges[12])
 
     assert.equal(met, false)
   })

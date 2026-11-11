@@ -46,6 +46,7 @@ export class BoardView {
     for (const piece of board.listPieces()) {
       const { model, animate } = createPieceModel(piece, {
         powered: board.isPoweredAt(piece.spot),
+        strength: board.measureStrengthAt(piece.spot),
         linkedSides: board.listLinkedSides(piece.spot),
         stillLife: this.reducedMotion.matches,
       })
@@ -58,7 +59,7 @@ export class BoardView {
     this.disposeChildrenOf(this.ghost)
     const look = blocked ? blockedLook : placementLook
     for (const piece of pieces) {
-      const { model } = createPieceModel(piece, { powered: false, linkedSides: [], stillLife: true })
+      const { model } = createPieceModel(piece, { powered: false, strength: 0, linkedSides: [], stillLife: true })
       model.traverse((part) => {
         if (part instanceof THREE.Mesh) Object.assign(part, { material: look, castShadow: false })
       })
@@ -116,7 +117,7 @@ export class BoardView {
   }
 }
 
-type PieceLook = { powered: boolean; linkedSides: Side[]; stillLife: boolean }
+type PieceLook = { powered: boolean; strength: number; linkedSides: Side[]; stillLife: boolean }
 
 const placementLook = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55 })
 const blockedLook = new THREE.MeshBasicMaterial({ color: '#ff3b3b', transparent: true, opacity: 0.65 })
@@ -154,11 +155,11 @@ function standingCylinder(radius: number, height: number, color: string, positio
   return part(new THREE.CylinderGeometry(radius, radius, height, 24), color, position)
 }
 
-function createPieceModel(piece: Piece, { powered, linkedSides, stillLife }: PieceLook) {
+function createPieceModel(piece: Piece, look: PieceLook) {
   const model = new THREE.Group()
   model.position.set(piece.spot.x + 0.5, 0, piece.spot.z + 0.5)
   if (piece.kind === 'wire') {
-    model.add(...createWire(linkedSides))
+    model.add(...createWire(look.linkedSides))
     return { model, animate: undefined }
   }
   const inner = new THREE.Group()
@@ -170,7 +171,7 @@ function createPieceModel(piece: Piece, { powered, linkedSides, stillLife }: Pie
     lamp: createLamp,
     motor: createMotor,
     buzzer: createBuzzer,
-  }[piece.kind](piece, powered, stillLife)
+  }[piece.kind](piece, look)
   inner.add(...parts)
   return { model, animate }
 }
@@ -226,18 +227,19 @@ function createSwitch(piece: Piece): PieceParts {
   }
 }
 
-function createLamp(_piece: Piece, powered: boolean): PieceParts {
+function createLamp(_piece: Piece, { powered, strength }: PieceLook): PieceParts {
+  const glow = Math.min(strength, 1.6) / 1.6
   const bulb = new THREE.Mesh(
     new THREE.SphereGeometry(0.3, 24, 16),
     powered
-      ? new THREE.MeshBasicMaterial({ color: '#fff1a8' })
+      ? new THREE.MeshBasicMaterial({ color: new THREE.Color('#8f7a3c').lerp(new THREE.Color('#fffbe6'), glow) })
       : new THREE.MeshLambertMaterial({ color: '#dfe8ee', transparent: true, opacity: 0.9 }),
   )
   bulb.position.set(0, 0.52, 0)
   bulb.castShadow = !powered
   const halo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.62, 24, 16),
-    new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.28, depthWrite: false }),
+    new THREE.SphereGeometry(0.4 + 0.3 * glow, 24, 16),
+    new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.06 + 0.3 * glow, depthWrite: false }),
   )
   halo.position.copy(bulb.position)
   return {
@@ -250,7 +252,7 @@ function createLamp(_piece: Piece, powered: boolean): PieceParts {
   }
 }
 
-function createMotor(_piece: Piece, powered: boolean, stillLife: boolean): PieceParts {
+function createMotor(_piece: Piece, { powered, strength, stillLife }: PieceLook): PieceParts {
   const blades = new THREE.Group()
   blades.position.set(0, 0.56, 0)
   blades.add(box([0.86, 0.03, 0.14], '#f5f1e6', [0, 0, 0]), box([0.14, 0.03, 0.86], '#f5f1e6', [0, 0, 0]))
@@ -264,13 +266,13 @@ function createMotor(_piece: Piece, powered: boolean, stillLife: boolean): Piece
     animate:
       powered && !stillLife
         ? (seconds) => {
-            blades.rotation.y = seconds * 14
+            blades.rotation.y = seconds * 14 * strength
           }
         : undefined,
   }
 }
 
-function createBuzzer(_piece: Piece, powered: boolean, stillLife: boolean): PieceParts {
+function createBuzzer(_piece: Piece, { powered, stillLife }: PieceLook): PieceParts {
   const body = standingCylinder(0.33, 0.22, '#1b1d22', [0, 0.21, 0])
   const waves = [0, 0.5].map((offset) => {
     const ring = new THREE.Mesh(

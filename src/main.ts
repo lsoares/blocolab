@@ -158,12 +158,15 @@ function rememberLevel(level: number) {
 
 function nameOf(piece: Piece, board: Board) {
   const working = board.isPoweredAt(piece.spot)
+  const strength = board.measureStrengthAt(piece.spot)
+  const weak = strength < 0.75
+  const strong = strength > 1.3
   return {
     battery: 'Pilha',
     wire: 'Fio',
     switch: `Interruptor (${piece.kind === 'switch' && piece.closed ? 'fechado' : 'aberto'})`,
-    lamp: `Lâmpada (${working ? 'acesa' : 'apagada'})`,
-    motor: `Motor (${working ? 'a rodar' : 'parado'})`,
+    lamp: `Lâmpada (${working ? `acesa${weak ? ' fraca' : strong ? ' forte' : ''}` : 'apagada'})`,
+    motor: `Motor (${working ? `a rodar${weak ? ' devagar' : strong ? ' depressa' : ''}` : 'parado'})`,
     buzzer: `Campainha (${working ? 'a tocar' : 'calada'})`,
   }[piece.kind]
 }
