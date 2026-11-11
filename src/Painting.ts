@@ -1,5 +1,5 @@
-import type { Position, World } from './World'
-import type { WorldView } from './WorldView'
+import type { Position, World } from './World.ts'
+import type { WorldView } from './WorldView.ts'
 
 export type Tool = 'brush' | 'eraser'
 

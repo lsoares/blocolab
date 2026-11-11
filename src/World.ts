@@ -19,10 +19,6 @@ export class World {
     this.cubes.delete(keyOf(position))
   }
 
-  hasCube(position: Position) {
-    return this.cubes.has(keyOf(position))
-  }
-
   listCubes() {
     return [...this.cubes.values()]
   }

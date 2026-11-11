@@ -1,7 +1,7 @@
 import './style.css'
-import { Painting, type Tool } from './Painting'
-import { World } from './World'
-import { WorldView } from './WorldView'
+import { Painting, type Tool } from './Painting.ts'
+import { World } from './World.ts'
+import { WorldView } from './WorldView.ts'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
 if (!canvas) throw new Error('The page has no #world canvas')

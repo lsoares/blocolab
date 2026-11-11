@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { IsometricCamera } from './IsometricCamera'
-import type { Position, World, WorldSize } from './World'
+import { IsometricCamera } from './IsometricCamera.ts'
+import type { Position, World, WorldSize } from './World.ts'
 
 export type Pick = { cube?: Position; nextTo: Position }
 
