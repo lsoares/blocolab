@@ -32,7 +32,7 @@ body {
   touch-action: manipulation;
 }
 
-.toolbar button[aria-pressed='true'] {
+.toolbar button[aria-pressed="true"] {
   border-color: #2b8cff;
   background: #d8eaff;
 }

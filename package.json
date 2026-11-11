@@ -8,14 +8,17 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && cd dist && git init -q -b gh-pages && git add -A && git commit -qm \"Publish\" && git push -qf \"$(git -C .. remote get-url origin)\" gh-pages",
+    "check": "tsc && biome check . && knip",
+    "format": "biome check --write ."
   },
   "dependencies": {
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.6.6",
     "@types/three": "^0.187.0",
-    "gh-pages": "^6.3.0",
+    "knip": "^6.44.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
