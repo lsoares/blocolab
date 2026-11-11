@@ -30,14 +30,16 @@ fio arrastado só preenche casas vazias); ao passar o rato aparece o **nome** da
 (por exemplo "Lâmpada (acesa)"); a pilha parece mesmo uma pilha; **sem zoom**; o tabuleiro
 tem casas de ~46 px medidas a partir do ecrã, por isso ocupa o ecrã todo.
 
+**Som** (feito): a campainha zumbe de verdade enquanto toca; pára ao abrir o circuito e quando
+o separador fica escondido. Não há botão de silêncio (o volume é baixo); fica como ideia.
+
 **Desafios** (feitos): 7 objetivos seguidos, da lâmpada até "lâmpada, motor e campainha ao
 mesmo tempo". Cada um tem uma dica; o botão "Próximo desafio" só aparece ao conseguir e o
 progresso fica guardado no browser. O tabuleiro começa vazio em cada desafio.
 
 Próximas ideias deste jogo: mais desafios (em série vs. em paralelo, brilho da lâmpada,
 "acende com o interruptor aberto"), saltar um desafio difícil, mais pilhas, resistência,
-íman, ventoinha no motor, som de verdade na campainha, e objetos que caem no tabuleiro
-(o muro serve para isso).
+íman, ventoinha no motor, e objetos que caem no tabuleiro (o muro serve para isso).
 
 As secções abaixo (blocos, rampas, água) são ideias anteriores; guardam-se para outros jogos.
 
