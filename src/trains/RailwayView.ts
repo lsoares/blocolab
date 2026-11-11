@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { BoardStage } from '../stage/BoardStage.ts'
-import type { Axis, BoardSize, Side, Spot } from '../stage/Grid.ts'
+import { type Axis, type BoardSize, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
 import {
   box,
   createErasureMarker,
@@ -11,6 +11,7 @@ import {
   standingCylinder,
 } from '../stage/Parts.ts'
 import { bridgeRise, type Car } from './Journey.ts'
+import { isStationStop } from './Rails.ts'
 import type { Piece, Railway } from './Railway.ts'
 import { advanceRoadCar, type RoadCar } from './RoadCar.ts'
 
@@ -20,6 +21,7 @@ export class RailwayView {
   private readonly ghost = new THREE.Group()
   private readonly cars = [createEngine(), createWagon('#2b6cb0'), createWagon('#e0b020')]
   private barriers: Barrier[] = []
+  private bubbles: LavaBubble[] = []
   private clock = 0
 
   constructor(canvas: HTMLCanvasElement, size: BoardSize) {
@@ -35,14 +37,17 @@ export class RailwayView {
   show(railway: Railway) {
     disposeChildrenOf(this.pieces)
     this.barriers = []
-    for (const piece of railway.listPieces()) {
-      const { model, barrier } = createPieceModel(
-        piece,
-        railway.listLinkedSides(piece.spot),
-        railway.listWaterSides(piece.spot),
-      )
+    this.bubbles = []
+    const placed = railway.listPieces()
+    for (const piece of placed) {
+      const { model, barrier } = createPieceModel(piece, {
+        pieces: placed,
+        linkedSides: railway.listLinkedSides(piece.spot),
+        waterSides: railway.listWaterSides(piece.spot),
+      })
       this.pieces.add(model)
       if (barrier) this.barriers.push({ ...barrier, spot: piece.spot, openness: 1 })
+      if (piece.kind === 'lava') this.bubbles.push(...createBubbles(model, piece.spot))
     }
   }
 
@@ -56,6 +61,16 @@ export class RailwayView {
       model.rotation.y = -car.heading
     })
     for (const barrier of this.barriers) this.moveGates(barrier, cars, seconds)
+    this.stirLava()
+  }
+
+  private stirLava() {
+    lavaGlow.color.setHSL(0.07 + 0.015 * Math.sin(this.clock * 2), 1, 0.52 + 0.08 * Math.sin(this.clock * 3.3))
+    for (const { mesh, phase } of this.bubbles) {
+      const age = (this.clock * 0.7 + phase) % 1
+      mesh.scale.setScalar(Math.max(Math.sin(Math.PI * age), 0.001))
+      mesh.position.y = 0.08 + 0.06 * age
+    }
   }
 
   private moveGates(barrier: Barrier, cars: Car[], seconds: number) {
@@ -73,11 +88,13 @@ export class RailwayView {
     })
   }
 
-  showPlacementGhost(piece: Piece) {
+  showPlacementGhost(pieces: Piece[]) {
     disposeChildrenOf(this.ghost)
-    const { model } = createPieceModel(piece, [], [])
-    showAsGhost(model)
-    this.ghost.add(model)
+    for (const piece of pieces) {
+      const { model } = createPieceModel(piece, { pieces, linkedSides: [], waterSides: [] })
+      showAsGhost(model)
+      this.ghost.add(model)
+    }
   }
 
   showTrainGhost({ x, z }: Spot) {
@@ -118,21 +135,28 @@ type Barrier = {
   openness: number
 }
 
-function createPieceModel(piece: Piece, linkedSides: Side[], waterSides: Side[]) {
+type Surroundings = { pieces: Piece[]; linkedSides: Side[]; waterSides: Side[] }
+
+function createPieceModel(piece: Piece, { pieces, linkedSides, waterSides }: Surroundings) {
   const model = new THREE.Group()
   model.position.set(piece.spot.x + 0.5, 0, piece.spot.z + 0.5)
   let barrier: Pick<Barrier, 'gates' | 'lamps' | 'roadCars'> | undefined
   if (piece.kind === 'track') model.add(...createTrack(linkedSides))
   else if (piece.kind === 'tree') model.add(createTree(piece.spot))
-  else if (piece.kind === 'river') model.add(...createWater(waterSides))
+  else if (piece.kind === 'river') model.add(...createWater(waterSides, water, 1, 0.06))
+  else if (piece.kind === 'lava') model.add(...createLava(waterSides))
+  else if (piece.kind === 'mountain') model.add(...createMountain(piece, pieces))
+  else if (piece.kind === 'station') model.add(...createStation(piece.axis, isStationStop(pieces, piece.spot)))
   else if (piece.kind === 'points') model.add(...createPoints(piece.side, linkedSides))
-  else if (piece.kind === 'bridge') model.add(...createBridge(piece.axis, linkedSides, waterSides))
-  else {
+  else if (piece.kind === 'bridge') {
+    const lavaSides = waterSides.filter((side) =>
+      pieces.some((other) => other.kind === 'lava' && isSpot(other.spot, stepFrom(piece.spot, side))),
+    )
+    model.add(...createBridge(piece.axis, linkedSides, waterSides, lavaSides))
+  } else {
     const inner = new THREE.Group()
     inner.rotation.y = piece.axis === 'horizontal' ? 0 : Math.PI / 2
     inner.add(...createTrack(['west', 'east']))
-    if (piece.kind === 'station') inner.add(...createStation())
-    if (piece.kind === 'tunnel') inner.add(...createTunnel())
     if (piece.kind === 'signal') inner.add(...createSignal(piece.go))
     if (piece.kind === 'barrier') {
       const crossing = createBarrier(piece.spot)
@@ -144,18 +168,44 @@ function createPieceModel(piece: Piece, linkedSides: Side[], waterSides: Side[])
   return { model, barrier }
 }
 
-function createWater(waterSides: Side[]) {
+function createWater(waterSides: Side[], colour: string, widen: number, height: number) {
   const [first, second] = waterSides
   if (waterSides.length === 2 && isACorner(first, second))
-    return [part(cornerSector(first, second, 0.18, 0.82, 0.06, 0), water, [0, 0, 0])]
-  const arms = waterSides.flatMap(createWaterArm)
+    return [part(cornerSector(first, second, 0.5 - 0.32 * widen, 0.5 + 0.32 * widen, height, 0), colour, [0, 0, 0])]
+  const arms = waterSides.flatMap((side) => createWaterArm(side, colour, widen, height))
   if (waterSides.length === 2) return arms
-  return [part(new THREE.CylinderGeometry(0.32, 0.32, 0.06, 20), water, [0, 0.03, 0]), ...arms]
+  return [part(new THREE.CylinderGeometry(0.32 * widen, 0.32 * widen, height, 20), colour, [0, height / 2, 0]), ...arms]
 }
 
-function createWaterArm(side: Side) {
+function createWaterArm(side: Side, colour: string, widen: number, height: number) {
   const { x, z } = vectorOf(side)
-  return [box(x !== 0 ? [0.5, 0.06, 0.64] : [0.64, 0.06, 0.5], water, [x * 0.25, 0.03, z * 0.25])]
+  const width = 0.64 * widen
+  return [box(x !== 0 ? [0.5, height, width] : [width, height, 0.5], colour, [x * 0.25, height / 2, z * 0.25])]
+}
+
+const lavaGlow = new THREE.MeshBasicMaterial({ color: '#ff8a2a' })
+
+const bubbleLook = new THREE.MeshBasicMaterial({ color: '#ffe066' })
+
+type LavaBubble = { mesh: THREE.Mesh; phase: number }
+
+function createLava(lavaSides: Side[]) {
+  return [...createWater(lavaSides, '#5a2a1a', 1.25, 0.05), ...glowing(createWater(lavaSides, '#ff8a2a', 0.85, 0.07))]
+}
+
+function glowing(meshes: THREE.Mesh[]) {
+  for (const mesh of meshes) mesh.material = lavaGlow
+  return meshes
+}
+
+function createBubbles(model: THREE.Group, { x, z }: Spot): LavaBubble[] {
+  return [0, 1, 2].map((index) => {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), bubbleLook)
+    const angle = (x * 5 + z * 11 + index * 2.1) * 1.7
+    mesh.position.set(0.14 * Math.cos(angle), 0.08, 0.14 * Math.sin(angle))
+    model.add(mesh)
+    return { mesh, phase: ((x * 3 + z * 7 + index * 5) % 10) / 10 }
+  })
 }
 
 function createBarrier(spot: Spot) {
@@ -204,7 +254,7 @@ function createPoints(aimedAt: Side, linkedSides: Side[]) {
   return [box([0.64, 0.1, 0.64], wood, [0, 0.05, 0]), ...linkedSides.flatMap(createArm), hub, arrow]
 }
 
-function createBridge(axis: Axis, linkedSides: Side[], waterSides: Side[]) {
+function createBridge(axis: Axis, linkedSides: Side[], waterSides: Side[], lavaSides: Side[]) {
   const alongX = axis === 'horizontal'
   const underneath = linkedSides.filter((side) => (vectorOf(side).x !== 0) !== alongX)
   const raised = new THREE.Group()
@@ -216,7 +266,15 @@ function createBridge(axis: Axis, linkedSides: Side[], waterSides: Side[]) {
     part(archedBand(0.18, 0.05, -0.31, 0.2), '#b98a55', [0, 0, 0]),
     part(archedBand(0.18, 0.05, 0.31, 0.2), '#b98a55', [0, 0, 0]),
   )
-  return [raised, ...waterSides.flatMap(createWaterArm), ...underneath.flatMap(createArm)]
+  return [
+    raised,
+    ...waterSides.filter((side) => !lavaSides.includes(side)).flatMap((side) => createWaterArm(side, water, 1, 0.06)),
+    ...lavaSides.flatMap((side) => [
+      ...createWaterArm(side, '#5a2a1a', 1.25, 0.05),
+      ...glowing(createWaterArm(side, '#ff8a2a', 0.85, 0.07)),
+    ]),
+    ...underneath.flatMap(createArm),
+  ]
 }
 
 function archedBand(thickness: number, width: number, aside: number, lift = 0) {
@@ -300,23 +358,61 @@ function ringSector(
   return geometry
 }
 
-function createStation() {
-  const roof = part(new THREE.ConeGeometry(0.3, 0.2, 4), '#8c3b2a', [0, 0.57, -0.4])
+function createStation(axis: Axis, isStop: boolean) {
+  const platform = new THREE.Group()
+  platform.rotation.y = axis === 'horizontal' ? 0 : Math.PI / 2
+  platform.add(...createTrack(['west', 'east']), box([1, 0.14, 0.24], '#c8c2b4', [0, 0.07, -0.4]))
+  platform.add(box([1, 0.04, 0.34], '#8c3b2a', [0, 0.52, -0.4]))
+  if (!isStop) {
+    platform.add(...[-0.45, 0.45].map((along) => box([0.05, 0.4, 0.05], '#5a4a3a', [along, 0.34, -0.5])))
+    return [platform]
+  }
+  const roof = part(new THREE.ConeGeometry(0.5, 0.24, 4), '#8c3b2a', [0, 0.66, -0.4])
   roof.rotation.y = Math.PI / 4
-  return [box([0.88, 0.16, 0.24], '#c8c2b4', [0, 0.08, -0.4]), box([0.46, 0.3, 0.2], '#d9534f', [0, 0.31, -0.4]), roof]
+  platform.add(
+    box([0.8, 0.34, 0.24], '#d9534f', [0, 0.31, -0.4]),
+    box([0.2, 0.2, 0.02], '#f4e3b0', [0, 0.34, -0.27]),
+    roof,
+  )
+  return [platform]
 }
 
-function createTunnel() {
-  const entrance = (side: number) => {
+function createMountain({ spot, axis }: Extract<Piece, { kind: 'mountain' }>, pieces: Piece[]) {
+  const joined = (['north', 'east', 'south', 'west'] as const).filter((side) =>
+    pieces.some((other) => other.kind === 'mountain' && isSpot(other.spot, stepFrom(spot, side))),
+  )
+  const layerCount = 2 + (joined.length >= 3 ? 1 : 0) + (joined.length >= 4 ? 2 : 0)
+  const colours = ['#7d8389', '#8f969c', '#a3aab0', '#b4bbc0', '#f2f5f7']
+  const parts: THREE.Object3D[] = Array.from({ length: layerCount }, (_, layer) => {
+    const inset = (side: Side) => (joined.includes(side) ? 0 : 0.09 * layer)
+    const [west, east, north, south] = [
+      -0.5 + inset('west'),
+      0.5 - inset('east'),
+      -0.5 + inset('north'),
+      0.5 - inset('south'),
+    ]
+    return box([east - west, 0.3, south - north], colours[layer === layerCount - 1 && layerCount === 5 ? 4 : layer], [
+      (east + west) / 2,
+      0.15 + 0.3 * layer,
+      (south + north) / 2,
+    ])
+  })
+  const mouths: Side[] = axis === 'horizontal' ? ['west', 'east'] : ['north', 'south']
+  for (const side of mouths.filter((mouth) => !joined.includes(mouth))) {
+    const { x, z } = vectorOf(side)
     const arch = new THREE.Mesh(
-      new THREE.CircleGeometry(0.36, 24, 0, Math.PI),
+      new THREE.CircleGeometry(0.26, 24, 0, Math.PI),
       new THREE.MeshBasicMaterial({ color: '#2d2a28' }),
     )
-    arch.position.set(side * 0.452, 0.02, 0)
-    arch.rotation.y = (side * Math.PI) / 2
-    return arch
+    arch.position.set(x * 0.505, 0.02, z * 0.505)
+    arch.rotation.y = Math.atan2(x, z)
+    parts.push(arch)
   }
-  return [lyingCylinder(0.46, 0.9, '#9aa0a6', [0, 0.02, 0]), entrance(-1), entrance(1)]
+  return parts
+}
+
+function isSpot(a: Spot, b: Spot) {
+  return a.x === b.x && a.z === b.z
 }
 
 function createSignal(go: boolean) {

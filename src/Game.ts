@@ -7,6 +7,8 @@ export type GameSession = {
   undo(): void
   startOver(): void
   startChallenge?(level: number): void
+  saveBoard(): unknown
+  restoreBoard(saved: unknown): void
   chooseTool(value: string): void
   nameUnder(pointer: PointerEvent): string | undefined
 }

@@ -1,4 +1,4 @@
-import type { Axis, Spot } from '../stage/Grid.ts'
+import type { Axis, BoardSize, Spot } from '../stage/Grid.ts'
 import type { Piece, Railway } from './Railway.ts'
 import type { RailwayView } from './RailwayView.ts'
 
@@ -10,7 +10,7 @@ export class Laying {
   private gestureStart: Spot = { x: 0, z: 0 }
   private laidUpTo: Spot = { x: 0, z: 0 }
   private trackStarted = false
-  private laidKind: 'track' | 'river' = 'track'
+  private laidKind: 'track' | 'river' | 'lava' = 'track'
   private cursor: Spot
   private cursorAxis: Axis = 'horizontal'
   private readonly railway: Railway
@@ -56,7 +56,7 @@ export class Laying {
     canvas.setPointerCapture(event.pointerId)
     if (this.tool === 'eraser') return this.startErasing(spot)
     if (this.isTappingAControl(spot)) return this.useControl(spot)
-    if (this.tool === 'track' || this.tool === 'river') return this.startLaying(spot)
+    if (isDraggedOut(this.tool)) return this.startLaying(spot)
     if (this.tool === 'train') return this.placeTrain(spot)
     this.gesture = 'turning'
     this.gestureStart = spot
@@ -70,7 +70,7 @@ export class Laying {
     if (this.gesture === 'erasing') return this.erase(spot)
     if (this.gesture === 'laying') return this.extendTrack(spot)
     if (this.gesture === 'turning') return this.previewAt(this.gestureStart, axisOfDrag(this.gestureStart, spot))
-    if (this.tool === 'track' || this.tool === 'river') return this.view.hideGhost()
+    if (isDraggedOut(this.tool)) return this.view.hideGhost()
     this.previewAt(spot, 'horizontal')
   }
 
@@ -78,7 +78,7 @@ export class Laying {
     if (!event.isPrimary) return
     if (this.gesture === 'turning') {
       const axis = axisOfDrag(this.gestureStart, this.findSpot(event) ?? this.gestureStart)
-      this.place(buildPiece(this.tool, this.gestureStart, axis))
+      this.place(buildPieces(this.tool, this.gestureStart, axis, this.railway.size))
     }
     if (this.gesture === 'laying' || this.gesture === 'erasing') this.railway.endStroke()
     this.gesture = 'none'
@@ -91,7 +91,7 @@ export class Laying {
   }
 
   private startLaying(spot: Spot) {
-    this.laidKind = this.tool === 'river' ? 'river' : 'track'
+    this.laidKind = this.tool === 'river' || this.tool === 'lava' ? this.tool : 'track'
     this.gesture = 'laying'
     this.laidUpTo = spot
     this.trackStarted = false
@@ -138,8 +138,10 @@ export class Laying {
     this.view.hideGhost()
   }
 
-  private place(piece: Piece | undefined) {
-    if (piece) this.railway.placePiece(piece)
+  private place(pieces: Piece[]) {
+    this.railway.startStroke()
+    for (const piece of pieces) this.railway.placePiece(piece)
+    this.railway.endStroke()
     this.onRailwayChanged()
     this.view.hideGhost()
   }
@@ -153,8 +155,8 @@ export class Laying {
     if (this.tool === 'eraser') return this.previewErasure(spot)
     if (this.isTappingAControl(spot)) return this.view.hideGhost()
     if (this.tool === 'train') return this.previewTrain(spot)
-    const piece = buildPiece(this.tool, spot, axis)
-    if (piece) this.view.showPlacementGhost(piece)
+    const pieces = buildPieces(this.tool, spot, axis, this.railway.size)
+    if (pieces.length > 0) this.view.showPlacementGhost(pieces)
   }
 
   private previewTrain(spot: Spot) {
@@ -193,7 +195,7 @@ export class Laying {
     if (this.tool === 'eraser') this.erase(this.cursor)
     else if (this.isTappingAControl(this.cursor)) this.useControl(this.cursor)
     else if (this.tool === 'train') this.railway.placeTrain(this.cursor)
-    else this.place(buildPiece(this.tool, this.cursor, this.cursorAxis))
+    else this.place(buildPieces(this.tool, this.cursor, this.cursorAxis, this.railway.size))
     this.onRailwayChanged()
   }
 }
@@ -206,13 +208,38 @@ const arrowSteps: Record<string, { dx: number; dz: number }> = {
 }
 
 function buildPiece(tool: Tool, spot: Spot, axis: Axis): Piece | undefined {
-  if (tool === 'track' || tool === 'tree' || tool === 'river') return { kind: tool, spot }
+  if (tool === 'track' || tool === 'tree' || tool === 'river' || tool === 'lava') return { kind: tool, spot }
   if (tool === 'signal') return { kind: tool, spot, axis, go: false }
-  if (tool === 'station' || tool === 'tunnel' || tool === 'bridge' || tool === 'barrier') {
+  if (tool === 'station' || tool === 'mountain' || tool === 'bridge' || tool === 'barrier') {
     return { kind: tool, spot, axis }
   }
   if (tool === 'points') return { kind: tool, spot, side: 'east' }
   return undefined
+}
+
+function isDraggedOut(tool: Tool) {
+  return tool === 'track' || tool === 'river' || tool === 'lava'
+}
+
+function buildPieces(tool: Tool, spot: Spot, axis: Axis, size: BoardSize): Piece[] {
+  const piece = buildPiece(tool, spot, axis)
+  if (!piece) return []
+  if (tool === 'mountain')
+    return coverArea(spot, { columns: 3, rows: 3 }, size).map((covered) => ({ ...piece, spot: covered }))
+  if (tool === 'station') {
+    const platform = axis === 'horizontal' ? { columns: 3, rows: 1 } : { columns: 1, rows: 3 }
+    return coverArea(spot, platform, size).map((covered) => ({ ...piece, spot: covered }))
+  }
+  return [piece]
+}
+
+function coverArea(centre: Spot, area: BoardSize, size: BoardSize): Spot[] {
+  const left = Math.min(Math.max(centre.x - Math.floor(area.columns / 2), 0), size.columns - area.columns)
+  const top = Math.min(Math.max(centre.z - Math.floor(area.rows / 2), 0), size.rows - area.rows)
+  return Array.from({ length: area.columns * area.rows }, (_, index) => ({
+    x: left + (index % area.columns),
+    z: top + Math.floor(index / area.columns),
+  }))
 }
 
 function axisOfDrag(from: Spot, to: Spot): Axis {

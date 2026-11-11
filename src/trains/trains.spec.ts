@@ -111,6 +111,44 @@ test('placing a station over a track replaces it', async ({ page }) => {
   await expect(game.getPieceName()).toHaveText('Estação')
 })
 
+test('a station stretches over three cells', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Estação')
+
+  await game.placeAtCursor()
+
+  await expect(game.getStatus()).toHaveText('3 peças')
+})
+
+test('a mountain covers a block of cells', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Montanha')
+
+  await game.placeAtCursor()
+
+  await expect(game.getStatus()).toHaveText('9 peças')
+})
+
+test('undo takes back a whole mountain at once', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Montanha')
+  await game.placeAtCursor()
+
+  await page.getByRole('button', { name: 'Desfazer' }).click()
+
+  await expect(game.getStatus()).toHaveText('0 peças')
+})
+
+test('the lava is offered among the pieces', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+
+  await expect(page.getByRole('radio', { name: 'Lava' })).toBeVisible()
+})
+
 test('undo takes back a whole dragged track', async ({ page }) => {
   const game = new GamePage(page)
   await game.open('comboio')

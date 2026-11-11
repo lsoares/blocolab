@@ -70,13 +70,17 @@ describe('Pieces turning by themselves', () => {
     })
   })
 
-  test('a tunnel that already meets a track keeps its way', () => {
+  test('a mountain that already meets a track keeps its way', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['tUt'])
 
     railway.placePiece({ kind: 'track', spot: { x: 1, z: 1 } })
 
-    assert.deepEqual(railway.findPieceAt({ x: 1, z: 0 }), { kind: 'tunnel', spot: { x: 1, z: 0 }, axis: 'horizontal' })
+    assert.deepEqual(railway.findPieceAt({ x: 1, z: 0 }), {
+      kind: 'mountain',
+      spot: { x: 1, z: 0 },
+      axis: 'horizontal',
+    })
   })
 
   test('a track links to the tracks beside it', () => {
@@ -275,6 +279,33 @@ describe('Rivers', () => {
     const visited = railway.planRoute()?.visits.map(({ spot }) => spot.x)
 
     assert.deepEqual(visited, [0, 1, 2, 3, 4])
+  })
+
+  test('lava flows into lava but not into a river', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['lw.'])
+
+    const sides = railway.listWaterSides({ x: 0, z: 0 })
+
+    assert.deepEqual(sides, [])
+  })
+
+  test('lava flows under a bridge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.l.', 'tBt', '.l.'])
+
+    const sides = railway.listWaterSides({ x: 1, z: 1 })
+
+    assert.deepEqual(sides, ['north', 'south'])
+  })
+
+  test('the train cannot stand on lava', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    railway.placePiece({ kind: 'lava', spot: { x: 1, z: 1 } })
+
+    railway.placeTrain({ x: 1, z: 1 })
+
+    assert.equal(railway.findTrainSpot(), undefined)
   })
 
   test('the train cannot stand on a river', () => {
@@ -486,11 +517,12 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 't' || symbol === 'M') return { kind: 'track', spot }
   if (symbol === 'a') return { kind: 'tree', spot }
   if (symbol === 'w') return { kind: 'river', spot }
+  if (symbol === 'l') return { kind: 'lava', spot }
   if (symbol.toLowerCase() === 'x') return { kind: 'barrier', spot, axis }
   if (symbol === 'B' || symbol === 'b') return { kind: 'bridge', spot, axis }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol.toLowerCase() === 'e') return { kind: 'station', spot, axis }
-  if (symbol.toLowerCase() === 'u') return { kind: 'tunnel', spot, axis }
+  if (symbol.toLowerCase() === 'u') return { kind: 'mountain', spot, axis }
   if (symbol.toLowerCase() === 'r' || symbol.toLowerCase() === 'g') return { kind: 'signal', spot, axis, go: false }
   return undefined
 }

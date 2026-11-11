@@ -1,4 +1,4 @@
-import { opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
+import { type Axis, opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
 import type { Piece } from './Railway.ts'
 
 export type Traversal = { spot: Spot; enter: Side; exit: Side; isEnd: boolean }
@@ -6,11 +6,15 @@ export type Traversal = { spot: Spot; enter: Side; exit: Side; isEnd: boolean }
 export type Route = { visits: { spot: Spot; enter: Side; exit?: Side }[]; closed: boolean }
 
 export function isRailPiece(piece: Piece) {
-  return piece.kind !== 'tree' && piece.kind !== 'river'
+  return piece.kind !== 'tree' && !isStream(piece)
+}
+
+function isStream(piece: Piece): piece is Extract<Piece, { kind: 'river' | 'lava' }> {
+  return piece.kind === 'river' || piece.kind === 'lava'
 }
 
 export function terminalSidesOf(piece: Piece): Side[] {
-  if (piece.kind === 'track' || piece.kind === 'bridge' || piece.kind === 'points' || piece.kind === 'river') {
+  if (piece.kind === 'track' || piece.kind === 'bridge' || piece.kind === 'points' || isStream(piece)) {
     return ['north', 'east', 'south', 'west']
   }
   if (piece.kind === 'tree') return []
@@ -26,10 +30,11 @@ export function findLinkedSides(pieces: Piece[], spot: Spot): Side[] {
 export function findWaterSides(pieces: Piece[], spot: Spot): Side[] {
   const pieceAt = indexBySpot(pieces)
   const here = pieceAt.get(keyOf(spot))
-  if (here?.kind !== 'river' && here?.kind !== 'bridge') return []
+  if (!here || (here.kind !== 'bridge' && !isStream(here))) return []
   return terminalSidesOf(here).filter((side) => {
     const next = pieceAt.get(keyOf(stepFrom(spot, side)))
-    return next?.kind === 'river' || (here.kind === 'river' && next?.kind === 'bridge')
+    if (!next) return false
+    return here.kind === 'bridge' ? isStream(next) : next.kind === here.kind || next.kind === 'bridge'
   })
 }
 
@@ -61,6 +66,24 @@ export function chooseExit(pieces: Piece[], spot: Spot, enter: Side, alternation
   if (options.includes(opposite[enter])) return { exit: opposite[enter], alternation }
   if (options.length === 1) return { exit: options[0], alternation }
   return { exit: options[alternation % options.length], alternation: alternation + 1 }
+}
+
+export function isStationStop(pieces: Piece[], spot: Spot) {
+  const pieceAt = indexBySpot(pieces)
+  const here = pieceAt.get(keyOf(spot))
+  if (here?.kind !== 'station') return false
+  const [back, forward]: Side[] = here.axis === 'horizontal' ? ['west', 'east'] : ['north', 'south']
+  const platformLength = (toward: Side) => {
+    let length = 0
+    let next = stepFrom(spot, toward)
+    while (isStationAlong(pieceAt.get(keyOf(next)), here.axis)) {
+      length++
+      next = stepFrom(next, toward)
+    }
+    return length
+  }
+  const before = platformLength(back)
+  return before === Math.floor((before + platformLength(forward)) / 2)
 }
 
 export function findStartTraversal(pieces: Piece[], spot: Spot): Traversal | undefined {
@@ -111,7 +134,7 @@ function linkedSidesOf(pieceAt: Map<string, Piece>, piece: Piece) {
 }
 
 function turnIfNothingMeetsIt(piece: Piece, pieceAt: Map<string, Piece>): Piece {
-  if (piece.kind === 'track' || piece.kind === 'tree' || piece.kind === 'points' || piece.kind === 'river') return piece
+  if (piece.kind === 'track' || piece.kind === 'tree' || piece.kind === 'points' || isStream(piece)) return piece
   if (piece.kind === 'bridge') return turnBridgeToItsLine(piece, pieceAt)
   const turned = { ...piece, axis: piece.axis === 'horizontal' ? 'vertical' : 'horizontal' } as Piece
   return linkedSidesOf(pieceAt, piece).length === 0 && linkedSidesOf(pieceAt, turned).length > 0 ? turned : piece
@@ -133,4 +156,8 @@ function indexBySpot(pieces: Piece[]) {
 
 function keyOf({ x, z }: Spot) {
   return `${x},${z},`
+}
+
+function isStationAlong(piece: Piece | undefined, axis: Axis) {
+  return piece?.kind === 'station' && piece.axis === axis
 }

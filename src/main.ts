@@ -53,6 +53,7 @@ function startGame(chosen: Game, canvas: HTMLCanvasElement) {
   const nextButton = panel?.querySelector<HTMLButtonElement>('.next')
   let session: GameSession | undefined
   let level = recallLevel(chosen)
+  const savedBoard = recallBoard(chosen)
   let achieved = false
   const refresh = () => {
     if (!session) return
@@ -67,10 +68,12 @@ function startGame(chosen: Game, canvas: HTMLCanvasElement) {
     panel?.classList.toggle('done', achieved)
     if (status) status.textContent = session.describeBoard()
     if (undoButton) undoButton.disabled = !session.canUndo()
+    rememberBoard(chosen, session.saveBoard())
   }
   const started = chosen.startSession(canvas, refresh)
   session = started
   started.startChallenge?.(level)
+  started.restoreBoard(savedBoard)
   if (chosen.tools.length > 0) started.chooseTool(chosen.tools[0].value)
   refresh()
 
@@ -145,6 +148,22 @@ function recallLevel(chosen: Game) {
 function rememberLevel(chosen: Game, level: number) {
   try {
     localStorage.setItem(`blocolab-level-${chosen.id}`, String(level))
+  } catch {
+    return
+  }
+}
+
+function recallBoard(chosen: Game): unknown {
+  try {
+    return JSON.parse(localStorage.getItem(`blocolab-board-${chosen.id}`) ?? 'null')
+  } catch {
+    return undefined
+  }
+}
+
+function rememberBoard(chosen: Game, board: unknown) {
+  try {
+    localStorage.setItem(`blocolab-board-${chosen.id}`, JSON.stringify(board))
   } catch {
     return
   }

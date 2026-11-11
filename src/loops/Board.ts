@@ -40,6 +40,13 @@ export class Board {
     this.change(this.pieces.map((placed) => (placed === piece ? { ...piece, closed: !piece.closed } : placed)))
   }
 
+  restorePieces(saved: unknown) {
+    if (!Array.isArray(saved)) return
+    this.startOver()
+    for (const piece of saved.filter(isPiece)) this.placePiece(piece)
+    this.undoable.length = 0
+  }
+
   withPieces(pieces: Piece[]) {
     const imagined = new Board(this.size)
     imagined.pieces = pieces
@@ -123,6 +130,16 @@ export class Board {
     this.pieces = turnToMeetNeighbours(pieces)
     this.circuit = undefined
   }
+}
+
+function isPiece(value: unknown): value is Piece {
+  const piece = value as Partial<Record<'kind' | 'axis' | 'spot', unknown>> | null
+  if (typeof piece !== 'object' || piece === null) return false
+  const spot = piece.spot as Partial<Spot> | undefined
+  if (typeof spot?.x !== 'number' || typeof spot.z !== 'number') return false
+  if (piece.kind === 'wire') return true
+  const knownKinds = ['switch', 'battery', 'lamp', 'motor', 'buzzer']
+  return knownKinds.includes(piece.kind as string) && (piece.axis === 'horizontal' || piece.axis === 'vertical')
 }
 
 function isSamePiece(a: Piece, b: Piece) {

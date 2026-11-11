@@ -11,12 +11,15 @@ import {
 
 export type Piece =
   | { kind: 'track'; spot: Spot }
-  | { kind: 'station' | 'tunnel' | 'barrier'; spot: Spot; axis: Axis }
+  | { kind: 'station'; spot: Spot; axis: Axis }
+  | { kind: 'mountain'; spot: Spot; axis: Axis }
+  | { kind: 'barrier'; spot: Spot; axis: Axis }
   | { kind: 'bridge'; spot: Spot; axis: Axis }
   | { kind: 'points'; spot: Spot; side: Side }
   | { kind: 'signal'; spot: Spot; axis: Axis; go: boolean }
   | { kind: 'tree'; spot: Spot }
   | { kind: 'river'; spot: Spot }
+  | { kind: 'lava'; spot: Spot }
 
 export class Railway {
   readonly size: BoardSize
@@ -24,6 +27,7 @@ export class Railway {
   private train?: Spot
   private readonly undoable: { pieces: Piece[]; train?: Spot }[] = []
   private stroke: 'none' | 'unchanged' | 'changed' = 'none'
+  private signalChanges = 0
 
   constructor(size: BoardSize) {
     this.size = size
@@ -60,6 +64,17 @@ export class Railway {
     this.change({ pieces: this.pieces.map((placed) => (placed === piece ? { ...piece, go: !piece.go } : placed)) })
   }
 
+  countSignalChanges() {
+    return this.signalChanges
+  }
+
+  showSignalAt(spot: Spot, go: boolean) {
+    const piece = this.findPieceAt(spot)
+    if (piece?.kind !== 'signal' || piece.go === go) return
+    this.pieces = this.pieces.map((placed) => (placed === piece ? { ...piece, go } : placed))
+    this.signalChanges++
+  }
+
   turnPointsAt(spot: Spot) {
     const piece = this.findPieceAt(spot)
     if (piece?.kind !== 'points') return
@@ -67,6 +82,15 @@ export class Railway {
     if (linked.length < 2) return
     const side = linked[(linked.indexOf(piece.side) + 1) % linked.length]
     this.change({ pieces: this.pieces.map((placed) => (placed === piece ? { ...piece, side } : placed)) })
+  }
+
+  restore(saved: unknown) {
+    const { pieces, train } = (saved ?? {}) as { pieces?: unknown; train?: Partial<Spot> }
+    if (!Array.isArray(pieces)) return
+    this.startOver()
+    for (const piece of pieces.filter(isPiece)) this.placePiece(piece)
+    if (typeof train?.x === 'number' && typeof train.z === 'number') this.placeTrain({ x: train.x, z: train.z })
+    this.undoable.length = 0
   }
 
   startOver() {
@@ -136,9 +160,18 @@ export class Railway {
   }
 }
 
+function isPiece(value: unknown): value is Piece {
+  const piece = value as Partial<Record<'kind' | 'axis' | 'side' | 'spot', unknown>> | null
+  if (typeof piece !== 'object' || piece === null) return false
+  const spot = piece.spot as Partial<Spot> | undefined
+  if (typeof spot?.x !== 'number' || typeof spot.z !== 'number') return false
+  if (['track', 'tree', 'river', 'lava'].includes(piece.kind as string)) return true
+  if (piece.kind === 'points') return typeof piece.side === 'string'
+  const alongAnAxis = ['station', 'mountain', 'barrier', 'bridge', 'signal']
+  return alongAnAxis.includes(piece.kind as string) && (piece.axis === 'horizontal' || piece.axis === 'vertical')
+}
+
 function isSamePiece(a: Piece, b: Piece) {
   if (a.kind !== b.kind) return false
-  if (a.kind === 'track' || a.kind === 'tree' || a.kind === 'points' || a.kind === 'river') return true
-  if (b.kind === 'track' || b.kind === 'tree' || b.kind === 'points' || b.kind === 'river') return true
-  return a.axis === b.axis
+  return !('axis' in a) || !('axis' in b) || a.axis === b.axis
 }

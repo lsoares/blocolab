@@ -67,7 +67,7 @@ describe('Train challenges', () => {
     assert.equal(met, false)
   })
 
-  test('a tunnel on the way meets the tunnel challenge', () => {
+  test('a mountain on the way meets the mountain challenge', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['MtUtt'])
 
@@ -226,6 +226,26 @@ describe('Bridge and points challenges', () => {
   })
 })
 
+describe('Lava challenge', () => {
+  test('crossing a river of lava over a bridge meets the lava challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.l...', 'MBttt', '.l...'])
+
+    const met = challenges[14].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('crossing a river of water does not meet the lava challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w...', 'MBttt', '.w...'])
+
+    const met = challenges[14].isMet(railway)
+
+    assert.equal(met, false)
+  })
+})
+
 describe('River and barrier challenges', () => {
   test('crossing a river over a bridge meets the river challenge', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
@@ -290,9 +310,10 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 't' || symbol === 'M') return { kind: 'track', spot }
   if (symbol === 'a') return { kind: 'tree', spot }
   if (symbol === 'E') return { kind: 'station', spot, axis: 'horizontal' }
-  if (symbol === 'U') return { kind: 'tunnel', spot, axis: 'horizontal' }
+  if (symbol === 'U') return { kind: 'mountain', spot, axis: 'horizontal' }
   if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
   if (symbol === 'w') return { kind: 'river', spot }
+  if (symbol === 'l') return { kind: 'lava', spot }
   if (symbol === 'X') return { kind: 'barrier', spot, axis: 'horizontal' }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }

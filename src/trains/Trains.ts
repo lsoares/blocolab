@@ -32,9 +32,14 @@ export const trains: Game = {
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="9" fill="var(--station)" /><path d="M1.5 12 12 4l10.5 8z" fill="var(--roof)" /><rect x="9.5" y="14" width="5" height="6" fill="var(--rail-dark)" /></svg>`,
     },
     {
-      value: 'tunnel',
-      name: 'Túnel',
-      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20v-7a10 10 0 0 1 20 0v7z" fill="var(--stone)" /><path d="M7 20v-5a5 5 0 0 1 10 0v5z" fill="var(--rail-dark)" /></svg>`,
+      value: 'mountain',
+      name: 'Montanha',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 21 9 5l4 7 3-4 8 13z" fill="var(--stone)" /><path d="M9 5l2.2 4.4-2.2-1-2.2 1z" fill="#fff" /><path d="M8 21v-4a3 3 0 0 1 6 0v4z" fill="var(--rail-dark)" /></svg>`,
+    },
+    {
+      value: 'lava',
+      name: 'Lava',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 12c3-6 6 6 11 0s8 6 11 0" fill="none" stroke="#ff7a1a" stroke-width="4.5" stroke-linecap="round" /><circle cx="6" cy="6" r="1.4" fill="#ffb020" /><circle cx="17" cy="18" r="1.2" fill="#ffb020" /></svg>`,
     },
     {
       value: 'bridge',
@@ -80,9 +85,14 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
   laying.listenTo(canvas)
   view.show(railway)
   let lastSeconds = 0
+  let signalsSeen = 0
   view.start((seconds) => {
     const delta = Math.min(seconds - lastSeconds, 0.1)
     journey.advance(delta)
+    if (railway.countSignalChanges() !== signalsSeen) {
+      signalsSeen = railway.countSignalChanges()
+      view.show(railway)
+    }
     lastSeconds = seconds
     view.showTrain(journey.listCars(), delta)
   })
@@ -97,6 +107,11 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
     },
     startOver: () => {
       railway.startOver()
+      show()
+    },
+    saveBoard: () => ({ pieces: railway.listPieces(), train: railway.findTrainSpot() }),
+    restoreBoard: (saved) => {
+      railway.restore(saved)
       show()
     },
     chooseTool: (value) => laying.chooseTool(value as Tool),
@@ -131,7 +146,8 @@ function nameOf(piece: Piece) {
   return {
     track: 'Carril',
     station: 'Estação',
-    tunnel: 'Túnel',
+    mountain: 'Montanha',
+    lava: 'Lava',
     bridge: 'Ponte',
     barrier: 'Barreira',
     river: 'Rio',

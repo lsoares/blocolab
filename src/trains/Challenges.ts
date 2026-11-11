@@ -11,8 +11,8 @@ export const challenges: Challenge[] = [
     isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'station'),
   },
   {
-    goal: 'Faz o comboio passar por um túnel.',
-    isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'tunnel'),
+    goal: 'Faz o comboio atravessar uma montanha.',
+    isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'mountain'),
   },
   {
     goal: 'Faz o comboio parar num semáforo vermelho.',
@@ -29,7 +29,7 @@ export const challenges: Challenge[] = [
     isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'bridge'),
   },
   { goal: 'Faz o comboio passar por cima e por baixo da ponte.', isMet: passesABridgeOverAndUnder },
-  { goal: 'Faz o comboio atravessar um rio por uma ponte.', isMet: crossesARiver },
+  { goal: 'Faz o comboio atravessar um rio por uma ponte.', isMet: (railway) => crossesAStream(railway, 'river') },
   {
     goal: 'Faz o comboio passar por uma passagem de nível.',
     isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'barrier'),
@@ -41,6 +41,10 @@ export const challenges: Challenge[] = [
   { goal: 'Usa a agulha para desviar o comboio.', isMet: isSentDownABranch },
   { goal: 'Faz um oito: o comboio passa pelo cruzamento nos dois sentidos.', isMet: passesACrossingBothWays },
   { goal: 'Planta três árvores ao lado da linha.', isMet: (railway) => treesBesideTheLine(railway) >= 3 },
+  {
+    goal: 'Faz o comboio atravessar um rio de lava por uma ponte.',
+    isMet: (railway) => crossesAStream(railway, 'lava'),
+  },
 ]
 
 function visitedPieces(railway: Railway): Piece[] {
@@ -60,11 +64,11 @@ function passesABridgeOverAndUnder(railway: Railway) {
   })
 }
 
-function crossesARiver(railway: Railway) {
+function crossesAStream(railway: Railway, kind: 'river' | 'lava') {
   return visitedPieces(railway).some((piece) => {
     if (piece.kind !== 'bridge') return false
     const across = piece.axis === 'horizontal' ? (['north', 'south'] as const) : (['west', 'east'] as const)
-    return across.every((side) => railway.findPieceAt(stepFrom(piece.spot, side))?.kind === 'river')
+    return across.every((side) => railway.findPieceAt(stepFrom(piece.spot, side))?.kind === kind)
   })
 }
 

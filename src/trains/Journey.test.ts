@@ -58,6 +58,27 @@ describe('The train on its way', () => {
     assert.ok(Math.abs((journey.listCars()[0]?.x ?? 0) - 2.5) < 0.1)
   })
 
+  test('a long platform keeps the train waiting in its middle', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtEEEtt'])
+    const journey = new Journey(railway)
+    journey.advance(1.4)
+
+    journey.advance(1.1)
+
+    assert.ok(Math.abs((journey.listCars()[0]?.x ?? 0) - 3.5) < 0.1)
+  })
+
+  test('the train does not wait at the start of a long platform', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtEEEtt'])
+    const journey = new Journey(railway)
+
+    journey.advance(1.6)
+
+    assert.ok((journey.listCars()[0]?.x ?? 0) > 2.8)
+  })
+
   test('the train leaves the station after waiting', () => {
     const railway = new Railway({ columns: 10, rows: 6 })
     draw(railway, ['MtEtt'])
@@ -69,12 +90,50 @@ describe('The train on its way', () => {
     assert.ok((journey.listCars()[0]?.x ?? 0) > 3)
   })
 
+  test('a red signal turns green by itself after the train waited', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtRttt'])
+    const journey = new Journey(railway)
+    journey.advance(1.2)
+
+    journey.advance(4)
+
+    assert.ok((journey.listCars()[0]?.x ?? 0) > 3)
+  })
+
+  test('a red signal keeps the train waiting at first', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtRttt'])
+    const journey = new Journey(railway)
+    journey.advance(1.2)
+
+    journey.advance(1.5)
+
+    assert.ok((journey.listCars()[0]?.x ?? 0) < 2.1)
+  })
+
+  test('the signal goes back to red once the train is past it', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtRtttt'])
+    const journey = new Journey(railway)
+    journey.advance(1.2)
+
+    journey.advance(6)
+
+    assert.deepEqual(railway.findPieceAt({ x: 2, z: 0 }), {
+      kind: 'signal',
+      spot: { x: 2, z: 0 },
+      axis: 'horizontal',
+      go: false,
+    })
+  })
+
   test('a red signal stops the train before it', () => {
     const railway = new Railway({ columns: 10, rows: 6 })
     draw(railway, ['MtRtt'])
     const journey = new Journey(railway)
 
-    journey.advance(10)
+    journey.advance(2.5)
 
     const x = journey.listCars()[0]?.x ?? 0
     assert.ok(x > 1.9 && x <= 2.01, `the train stopped at x=${x}`)
@@ -126,7 +185,7 @@ describe('The train on its way', () => {
     assert.ok(engine.x > first.x && first.x > second.x, `cars at ${engine.x}, ${first.x}, ${second.x}`)
   })
 
-  test('the train is hidden inside a tunnel', () => {
+  test('the train is hidden inside a mountain', () => {
     const railway = new Railway({ columns: 10, rows: 6 })
     draw(railway, ['MtUtt'])
     const journey = new Journey(railway)
@@ -136,7 +195,7 @@ describe('The train on its way', () => {
     assert.equal(journey.listCars()[0]?.hidden, true)
   })
 
-  test('the train is in plain view outside the tunnel', () => {
+  test('the train is in plain view outside the mountain', () => {
     const railway = new Railway({ columns: 10, rows: 6 })
     draw(railway, ['MtUtt'])
     const journey = new Journey(railway)
@@ -252,9 +311,10 @@ function draw(railway: Railway, rows: string[]) {
 function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undefined {
   if (symbol === 't' || symbol === 'M') return { kind: 'track', spot }
   if (symbol === 'E') return { kind: 'station', spot, axis: 'horizontal' }
-  if (symbol === 'U') return { kind: 'tunnel', spot, axis: 'horizontal' }
+  if (symbol === 'U') return { kind: 'mountain', spot, axis: 'horizontal' }
   if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
   if (symbol === 'w') return { kind: 'river', spot }
+  if (symbol === 'l') return { kind: 'lava', spot }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }
   return undefined

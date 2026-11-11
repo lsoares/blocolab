@@ -1,5 +1,5 @@
 import { opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
-import { chooseExit, findStartTraversal, isRailPiece, type Traversal, terminalSidesOf } from './Rails.ts'
+import { chooseExit, findStartTraversal, isRailPiece, isStationStop, type Traversal, terminalSidesOf } from './Rails.ts'
 import type { Piece, Railway } from './Railway.ts'
 
 export type Car = { x: number; z: number; heading: number; hidden: boolean; lift: number }
@@ -11,6 +11,8 @@ export class Journey {
   private travelled = 0
   private alternation = 0
   private waitRemaining = 0
+  private signalWait = 0
+  private releasedSignal?: Spot
   private stationDone = true
   private startedAt?: Spot
   private trail: Point[] = []
@@ -41,7 +43,11 @@ export class Journey {
       }
       const length = lengthOf(this.traversal)
       if (length - this.travelled <= 1e-9) {
-        if (!this.arrive()) break
+        if (!this.arrive()) {
+          const waited = this.waitForSignal(time)
+          if (waited === 0) break
+          time -= waited
+        }
         continue
       }
       const step = Math.min(time * speed, length - this.travelled, 0.05, this.distanceToStationStop(length))
@@ -60,7 +66,7 @@ export class Journey {
     return [0, 1, 2].map((index) => {
       const { point, heading } = this.findPointBehind(index * carSpacing)
       const piece = this.railway.findPieceAt({ x: Math.floor(point.x), z: Math.floor(point.z) })
-      return { ...point, heading, hidden: piece?.kind === 'tunnel', lift: liftOver(piece, point, heading) }
+      return { ...point, heading, hidden: piece?.kind === 'mountain', lift: liftOver(piece, point, heading) }
     })
   }
 
@@ -75,6 +81,7 @@ export class Journey {
     this.traversal = start && findStartTraversal(this.railway.listPieces(), start)
     this.alternation = 0
     this.waitRemaining = 0
+    this.signalWait = 0
     this.stationDone = true
     this.trail = []
     if (!this.traversal) return
@@ -105,14 +112,36 @@ export class Journey {
     if (nextPiece.kind === 'signal' && !nextPiece.go) return false
     const choice = chooseExit(pieces, next, enter, this.alternation)
     this.travelled = 0
-    this.stationDone = nextPiece.kind !== 'station'
+    this.stationDone = !isStationStop(pieces, next)
     if (!choice) {
       this.traversal = { spot: next, enter, exit: opposite[enter], isEnd: true }
       return true
     }
     this.alternation = choice.alternation
     this.traversal = { spot: next, enter, exit: choice.exit, isEnd: false }
+    this.stopReleasedSignal()
     return true
+  }
+
+  private waitForSignal(seconds: number) {
+    const ahead = this.traversal && stepFrom(this.traversal.spot, this.traversal.exit)
+    const piece = ahead && this.railway.findPieceAt(ahead)
+    if (piece?.kind !== 'signal' || piece.go) return 0
+    const waited = Math.min(seconds, signalPatience - this.signalWait)
+    this.signalWait += waited
+    if (this.signalWait >= signalPatience) {
+      this.signalWait = 0
+      this.releasedSignal = piece.spot
+      this.railway.showSignalAt(piece.spot, true)
+    }
+    return waited
+  }
+
+  private stopReleasedSignal() {
+    const released = this.releasedSignal
+    if (!released || (this.traversal?.spot.x === released.x && this.traversal.spot.z === released.z)) return
+    this.railway.showSignalAt(released, false)
+    this.releasedSignal = undefined
   }
 
   private leaveTheEndOfTheLine({ spot, enter }: Traversal, pieces: Parameters<typeof chooseExit>[0]) {
@@ -136,7 +165,7 @@ export class Journey {
   }
 
   private isStationCell() {
-    return this.traversal !== undefined && this.railway.findPieceAt(this.traversal.spot)?.kind === 'station'
+    return this.traversal !== undefined && isStationStop(this.railway.listPieces(), this.traversal.spot)
   }
 
   private record(point: Point) {
@@ -179,6 +208,7 @@ export class Journey {
 
 export const bridgeRise = 0.5
 const speed = 1.5
+const signalPatience = 3
 const carSpacing = 0.8
 
 function liftOver(piece: Piece | undefined, point: Point, heading: number) {

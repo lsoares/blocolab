@@ -75,6 +75,11 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
       board.startOver()
       show()
     },
+    saveBoard: () => board.listPieces(),
+    restoreBoard: (saved) => {
+      board.restorePieces(saved)
+      show()
+    },
     chooseTool: (value) => placing.chooseTool(value as Tool),
     nameUnder: (pointer) => {
       const spot = view.pickSpot(pointer)

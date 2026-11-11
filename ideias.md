@@ -410,3 +410,24 @@ pedras). Desfazer tira a última carta; Limpar esvazia a fila.
 - Ideias a seguir: blocos próprios (funções),
   limite de cartas ("chega lá com 5"), mais objetos (chaves e portas, botões que ligam
   circuitos do outro jogo), ligar o robô aos circuitos (o robô acende a lâmpada).
+
+## Comboio: lava, montanhas e estação grande
+
+- O **túnel** de uma casa saiu. Em vez dele há a **montanha**: um bloco de 3×3 casas, com picos
+  mais altos ao meio. O comboio atravessa-a (fica escondido lá dentro) pela linha que passa
+  no sentido arrastado ao pôr a montanha.
+- A **estação** ocupa 3 casas (plataforma comprida com telhado, edifício ao meio) e o comboio
+  só pára no meio.
+- O **rio de lava** arrasta-se como o rio, mas é outra corrente (não se mistura com a água);
+  só se atravessa por uma ponte, que mostra a lava por baixo. A lava mexe: brilho a pulsar e
+  bolhas a rebentar. Novo desafio no fim da lista.
+- O **semáforo vermelho** abre sozinho depois de o comboio esperar 3 segundos e volta a vermelho
+  quando ele passa (tocar com a ferramenta continua a mudá-lo à mão).
+- Ideias a seguir: dragão que cospe lama, vulcão que muda a lava, montanhas com neve que
+  param o comboio, mais estações grandes (com vários cais), ponte de pedra.
+
+## O tabuleiro fica guardado
+
+Cada jogo guarda o tabuleiro no browser (`localStorage`) a cada mudança e recupera-o ao abrir a
+página ou ao voltar de outro jogo; os desafios continuam onde estavam. Não guarda o histórico de
+"desfazer".

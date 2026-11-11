@@ -1,5 +1,6 @@
 import type { Game, GameSession } from '../Game.ts'
 import { measureBoardThatFits } from '../stage/BoardCamera.ts'
+import type { Card } from './Cards.ts'
 import { CardTray } from './CardTray.ts'
 import { challenges } from './Challenges.ts'
 import { buildCourse } from './Course.ts'
@@ -71,9 +72,18 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
       view.showCourse(mission.course)
       show()
     },
+    saveBoard: () => mission.listCards(),
+    restoreBoard: (saved) => {
+      if (Array.isArray(saved)) for (const card of saved.filter(isCard)) mission.addCard(card)
+      show()
+    },
     chooseTool: () => undefined,
     nameUnder: () => undefined,
   }
+}
+
+function isCard(value: unknown): value is Card {
+  return ['forward', 'turn-left', 'turn-right', 'repeat'].includes(value as string)
 }
 
 function describeMission(mission: Mission) {
