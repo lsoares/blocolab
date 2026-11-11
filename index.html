@@ -9,41 +9,57 @@
   <body>
     <aside class="toolbar">
       <fieldset>
-        <legend class="visually-hidden">Ferramenta</legend>
-        <label title="Cubo baixo">
-          <input type="radio" name="tool" value="cube" data-height="1" checked />
-          <svg aria-hidden="true" viewBox="-0.97 -0.77 1.93 1.93"><polygon points="0.87,0.50 0.87,-0.10 0.00,0.40 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,0.40 -0.87,-0.10" fill="var(--block-shade)" /><polygon points="0.00,-0.60 0.87,-0.10 0.00,0.40 -0.87,-0.10" fill="var(--block-top)" /></svg>
-          <span class="visually-hidden">Cubo baixo</span>
+        <legend class="visually-hidden">Peça</legend>
+        <label title="Pilha">
+          <input type="radio" name="tool" value="battery" checked />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <rect x="2" y="7" width="17" height="10" rx="2" fill="var(--battery)" />
+            <rect x="19" y="10" width="3" height="4" rx="1" fill="var(--gold)" />
+            <path d="M7 12h5M9.5 9.5v5" stroke="white" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <span class="visually-hidden">Pilha</span>
         </label>
-        <label title="Cubo médio">
-          <input type="radio" name="tool" value="cube" data-height="2" />
-          <svg aria-hidden="true" viewBox="-1.20 -1.30 2.40 2.40"><polygon points="0.87,0.50 0.87,-0.70 0.00,-0.20 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,-0.20 -0.87,-0.70" fill="var(--block-shade)" /><polygon points="0.00,-1.20 0.87,-0.70 0.00,-0.20 -0.87,-0.70" fill="var(--block-top)" /></svg>
-          <span class="visually-hidden">Cubo médio</span>
+        <label title="Fio">
+          <input type="radio" name="tool" value="wire" />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M5 12h14" stroke="var(--wire)" stroke-width="4" stroke-linecap="round" />
+            <circle cx="4" cy="12" r="2.4" fill="var(--gold)" />
+            <circle cx="20" cy="12" r="2.4" fill="var(--gold)" />
+          </svg>
+          <span class="visually-hidden">Fio</span>
         </label>
-        <label title="Cubo alto">
-          <input type="radio" name="tool" value="cube" data-height="3" />
-          <svg aria-hidden="true" viewBox="-1.50 -1.90 3.00 3.00"><polygon points="0.87,0.50 0.87,-1.30 0.00,-0.80 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,-0.80 -0.87,-1.30" fill="var(--block-shade)" /><polygon points="0.00,-1.80 0.87,-1.30 0.00,-0.80 -0.87,-1.30" fill="var(--block-top)" /></svg>
-          <span class="visually-hidden">Cubo alto</span>
+        <label title="Interruptor">
+          <input type="radio" name="tool" value="switch" />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="5" cy="17" r="2.4" fill="var(--gold)" />
+            <circle cx="19" cy="17" r="2.4" fill="var(--gold)" />
+            <path d="M5 17 17 7" stroke="var(--switch)" stroke-width="3.2" stroke-linecap="round" />
+          </svg>
+          <span class="visually-hidden">Interruptor</span>
         </label>
-        <label title="Rampa baixa">
-          <input type="radio" name="tool" value="ramp" data-height="1" />
-          <svg aria-hidden="true" viewBox="-0.97 -0.52 1.93 1.93"><polygon points="0.87,0.50 0.87,-0.10 0.00,0.40 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,0.40" fill="var(--block-shade)" /><polygon points="0.00,0.00 0.87,-0.10 0.00,0.40 -0.87,0.50" fill="var(--block-top)" /></svg>
-          <span class="visually-hidden">Rampa baixa</span>
+        <label title="Lâmpada">
+          <input type="radio" name="tool" value="lamp" />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="12" cy="10" r="7" fill="var(--bulb)" />
+            <rect x="8.5" y="16.5" width="7" height="4.5" rx="1.2" fill="var(--socket)" />
+          </svg>
+          <span class="visually-hidden">Lâmpada</span>
         </label>
-        <label title="Rampa média">
-          <input type="radio" name="tool" value="ramp" data-height="2" />
-          <svg aria-hidden="true" viewBox="-0.97 -0.82 1.93 1.93"><polygon points="0.87,0.50 0.87,-0.70 0.00,-0.20 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,-0.20" fill="var(--block-shade)" /><polygon points="0.00,0.00 0.87,-0.70 0.00,-0.20 -0.87,0.50" fill="var(--block-top)" /></svg>
-          <span class="visually-hidden">Rampa média</span>
+        <label title="Motor">
+          <input type="radio" name="tool" value="motor" />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="var(--motor)" />
+            <path d="M12 4v16M4 12h16" stroke="white" stroke-width="2.6" stroke-linecap="round" transform="rotate(30 12 12)" />
+          </svg>
+          <span class="visually-hidden">Motor</span>
         </label>
-        <label title="Rampa alta">
-          <input type="radio" name="tool" value="ramp" data-height="3" />
-          <svg aria-hidden="true" viewBox="-1.25 -1.40 2.50 2.50"><polygon points="0.87,0.50 0.87,-1.30 0.00,-0.80 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,-0.80" fill="var(--block-shade)" /><polygon points="0.00,0.00 0.87,-1.30 0.00,-0.80 -0.87,0.50" fill="var(--block-top)" /></svg>
-          <span class="visually-hidden">Rampa alta</span>
-        </label>
-        <label title="Bola">
-          <input type="radio" name="tool" value="ball" />
-          <svg aria-hidden="true" viewBox="-1 -1 2 2"><circle r="0.7" fill="var(--ball)" /></svg>
-          <span class="visually-hidden">Bola</span>
+        <label title="Campainha">
+          <input type="radio" name="tool" value="buzzer" />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="8" cy="12" r="5.5" fill="var(--buzzer)" />
+            <path d="M15.5 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14" stroke="var(--buzzer)" fill="none" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+          <span class="visually-hidden">Campainha</span>
         </label>
         <label title="Borracha">
           <input type="radio" name="tool" value="eraser" />
@@ -52,20 +68,18 @@
         </label>
       </fieldset>
       <button type="button" class="undo" aria-label="Desfazer" title="Desfazer" disabled>↶</button>
-      <output class="visually-hidden" aria-live="polite">0 blocos</output>
+      <output class="visually-hidden" aria-live="polite">0 peças</output>
     </aside>
     <main>
-      <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the world is a keyboard-driven widget, which is what the application role announces -->
-      <canvas id="world" role="application" tabindex="0" aria-label="Mundo"></canvas>
-      <button type="button" class="run" aria-label="Correr" title="Correr / Parar">▶</button>
+      <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the board is a keyboard-driven widget, which is what the application role announces -->
+      <canvas id="world" role="application" tabindex="0" aria-label="Tabuleiro"></canvas>
       <fieldset class="camera">
         <legend class="visually-hidden">Câmara</legend>
-        <button type="button" data-camera="rotate" aria-label="Rodar" title="Rodar">⟳</button>
         <button type="button" data-camera="zoom-in" aria-label="Aproximar" title="Aproximar">+</button>
         <button type="button" data-camera="zoom-out" aria-label="Afastar" title="Afastar">−</button>
       </fieldset>
       <p class="no-3d" role="alert" hidden>
-        Este browser não consegue mostrar o mundo em 3D. Experimenta numa versão recente do Chrome, Firefox, Safari ou Edge.
+        Este browser não consegue mostrar o tabuleiro em 3D. Experimenta numa versão recente do Chrome, Firefox, Safari ou Edge.
       </p>
     </main>
     <script type="module" src="/src/main.ts"></script>

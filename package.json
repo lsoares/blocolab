@@ -13,7 +13,6 @@
     "format": "biome check --write ."
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.21.0",
     "three": "^0.187.0"
   },
   "devDependencies": {
