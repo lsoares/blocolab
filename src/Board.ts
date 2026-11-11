@@ -43,6 +43,12 @@ export class Board {
     this.change(this.pieces.map((placed) => (placed === piece ? { ...piece, closed: !piece.closed } : placed)))
   }
 
+  startOver() {
+    this.pieces = []
+    this.undoable.length = 0
+    this.circuit = undefined
+  }
+
   startStroke() {
     this.stroke = 'unchanged'
   }

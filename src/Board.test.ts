@@ -253,3 +253,23 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol.toLowerCase() === 'c') return { kind: 'switch', spot, axis, closed: true }
   return kind ? { kind, spot, axis } : undefined
 }
+
+describe('Starting over', () => {
+  test('starting over empties the board', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'wire', spot: { x: 1, z: 1 } })
+
+    board.startOver()
+
+    assert.deepEqual(board.listPieces(), [])
+  })
+
+  test('starting over leaves nothing to undo', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'wire', spot: { x: 1, z: 1 } })
+
+    board.startOver()
+
+    assert.equal(board.canUndo(), false)
+  })
+})

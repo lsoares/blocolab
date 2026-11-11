@@ -1,6 +1,7 @@
 import './style.css'
 import { Board } from './Board.ts'
 import { BoardView } from './BoardView.ts'
+import { challenges, isMet } from './Challenges.ts'
 import { Placing, type Tool } from './Placing.ts'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
@@ -15,7 +16,26 @@ function startGame(canvas: HTMLCanvasElement) {
   const view = new BoardView(canvas, board.size, matchMedia('(prefers-reduced-motion: reduce)'))
   const status = document.querySelector('output')
   const undoButton = document.querySelector<HTMLButtonElement>('.undo')
+  const panel = document.querySelector<HTMLElement>('.challenge')
+  const goal = panel?.querySelector('.goal')
+  const hint = panel?.querySelector('.hint')
+  const nextButton = panel?.querySelector<HTMLButtonElement>('.next')
+  let level = recallLevel()
+  let achieved = false
+  const showChallenge = () => {
+    const challenge = challenges[level]
+    if (challenge && isMet(board, challenge)) achieved = true
+    if (goal) {
+      goal.textContent = challenge
+        ? `Desafio ${level + 1} de ${challenges.length}: ${challenge.goal}${achieved ? ' ✓ Conseguiste!' : ''}`
+        : 'Fizeste todos os desafios! Agora constrói o que quiseres.'
+    }
+    if (hint) hint.textContent = challenge ? `Dica: ${challenge.hint}` : ''
+    if (nextButton) nextButton.hidden = !achieved
+    panel?.classList.toggle('done', achieved)
+  }
   const showBoard = () => {
+    showChallenge()
     view.show(board)
     if (status) status.textContent = describeBoard(board)
     if (undoButton) undoButton.disabled = !board.canUndo()
@@ -26,6 +46,15 @@ function startGame(canvas: HTMLCanvasElement) {
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
     radio.addEventListener('change', () => placing.chooseTool(radio.value as Tool))
   }
+
+  nextButton?.addEventListener('click', () => {
+    level += 1
+    achieved = false
+    board.startOver()
+    rememberLevel(level)
+    showBoard()
+    canvas.focus()
+  })
 
   const undo = () => {
     board.undo()
@@ -82,4 +111,20 @@ function describeBoard(board: Board) {
 
 function pluralize(count: number, [one, other]: string[]) {
   return `${count} ${new Intl.PluralRules('pt-PT').select(count) === 'one' ? one : other}`
+}
+
+function recallLevel() {
+  try {
+    return Math.min(Number(localStorage.getItem('blocolab-level')) || 0, challenges.length)
+  } catch {
+    return 0
+  }
+}
+
+function rememberLevel(level: number) {
+  try {
+    localStorage.setItem('blocolab-level', String(level))
+  } catch {
+    return
+  }
 }
