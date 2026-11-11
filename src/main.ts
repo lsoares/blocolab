@@ -1,81 +1,97 @@
 import './style.css'
-import { Board, type Piece } from './circuits/Board.ts'
-import { BoardView } from './circuits/BoardView.ts'
-import { BuzzerSound } from './circuits/BuzzerSound.ts'
-import { challenges, isMet } from './circuits/Challenges.ts'
-import { Placing, type Tool } from './circuits/Placing.ts'
-import { measureBoardThatFits } from './stage/BoardCamera.ts'
+import { circuits } from './circuits/Circuits.ts'
+import type { Game, GameSession } from './Game.ts'
+
+const games: Game[] = [circuits]
+const game = games.find(({ id }) => `#${id}` === location.hash) ?? games[0]
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
 if (!canvas) throw new Error('The page has no #world canvas')
-if (document.createElement('canvas').getContext('webgl2')) startGame(canvas)
+showTheGames(games, game)
+showThePieces(game)
+if (document.createElement('canvas').getContext('webgl2')) startGame(game, canvas)
 else showThatThe3dBoardIsUnavailable(canvas)
+window.addEventListener('hashchange', () => location.reload())
 
-function startGame(canvas: HTMLCanvasElement) {
-  const board = new Board(measureBoardThatFits(canvas.clientWidth, canvas.clientHeight))
-  const view = new BoardView(canvas, board.size, matchMedia('(prefers-reduced-motion: reduce)'))
+function showTheGames(all: Game[], chosen: Game) {
+  const switcher = document.querySelector('.games')
+  for (const other of all) {
+    switcher?.insertAdjacentHTML(
+      'beforeend',
+      `<a href="#${other.id}" data-name="${other.name}"${other === chosen ? ' aria-current="page"' : ''}>
+        <span aria-hidden="true">${other.icon}</span><span class="visually-hidden">${other.name}</span>
+      </a>`,
+    )
+  }
+}
+
+function showThePieces(chosen: Game) {
+  const pieces = document.querySelector('.pieces')
+  for (const [index, tool] of chosen.tools.entries()) {
+    pieces?.insertAdjacentHTML(
+      'beforeend',
+      `<label data-name="${tool.name}">
+        <input type="radio" name="tool" value="${tool.value}"${index === 0 ? ' checked' : ''} />
+        ${tool.icon}
+        <span class="visually-hidden">${tool.name}</span>
+      </label>`,
+    )
+  }
+}
+
+function startGame(chosen: Game, canvas: HTMLCanvasElement) {
   const status = document.querySelector('output')
   const undoButton = document.querySelector<HTMLButtonElement>('.undo')
   const panel = document.querySelector<HTMLElement>('.challenge')
   const goal = panel?.querySelector('.goal')
   const nextButton = panel?.querySelector<HTMLButtonElement>('.next')
-  let level = recallLevel()
+  let session: GameSession | undefined
+  let level = recallLevel(chosen)
   let achieved = false
-  const showChallenge = () => {
-    const challenge = challenges[level]
-    if (challenge && isMet(board, challenge)) achieved = true
+  const refresh = () => {
+    if (!session) return
+    if (level < chosen.goals.length && session.isChallengeMet(level)) achieved = true
     if (goal) {
-      goal.textContent = challenge
-        ? `${challenge.goal}${achieved ? ' ✓ Conseguiste!' : ''}`
-        : 'Fizeste todos os desafios! Agora constrói o que quiseres.'
+      goal.textContent =
+        level < chosen.goals.length
+          ? `${chosen.goals[level]}${achieved ? ' ✓ Conseguiste!' : ''}`
+          : 'Fizeste todos os desafios! Agora constrói o que quiseres.'
     }
     if (nextButton) nextButton.hidden = !achieved
     panel?.classList.toggle('done', achieved)
+    if (status) status.textContent = session.describeBoard()
+    if (undoButton) undoButton.disabled = !session.canUndo()
   }
-  const buzzerSound = new BuzzerSound()
-  document.addEventListener('visibilitychange', () => document.hidden && buzzerSound.silence())
-  const showBoard = () => {
-    showChallenge()
-    if (isABuzzerSounding(board)) buzzerSound.play()
-    else buzzerSound.silence()
-    view.show(board)
-    if (status) status.textContent = describeBoard(board)
-    if (undoButton) undoButton.disabled = !board.canUndo()
-  }
-  const placing = new Placing(board, view, showBoard)
-  placing.listenTo(canvas)
+  const started = chosen.startSession(canvas, refresh)
+  session = started
+  started.chooseTool(chosen.tools[0].value)
+  refresh()
 
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
-    radio.addEventListener('change', () => placing.chooseTool(radio.value as Tool))
+    radio.addEventListener('change', () => started.chooseTool(radio.value))
   }
-
-  const goToNextChallenge = () => {
+  nextButton?.addEventListener('click', () => {
     level += 1
     achieved = false
-    board.startOver()
-    rememberLevel(level)
-    showBoard()
+    rememberLevel(chosen, level)
+    started.startOver()
     canvas.focus()
-  }
-  nextButton?.addEventListener('click', goToNextChallenge)
-
-  const undo = () => {
-    board.undo()
-    showBoard()
-  }
-  undoButton?.addEventListener('click', undo)
+  })
+  undoButton?.addEventListener('click', () => started.undo())
   document.addEventListener('keydown', (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return
     event.preventDefault()
-    undo()
+    started.undo()
   })
+  showNames(canvas, started)
+}
 
+function showNames(canvas: HTMLCanvasElement, session: GameSession) {
   const pieceName = document.querySelector<HTMLElement>('.piece-name')
   canvas.addEventListener('pointermove', (event) => {
-    const spot = event.buttons === 0 ? view.pickSpot(event) : undefined
-    const piece = spot && board.findPieceAt(spot)
-    if (!pieceName || !piece) return void pieceName?.setAttribute('hidden', '')
-    pieceName.textContent = nameOf(piece, board)
+    const name = event.buttons === 0 ? session.nameUnder(event) : undefined
+    if (!pieceName || !name) return void pieceName?.setAttribute('hidden', '')
+    pieceName.textContent = name
     const area = canvas.getBoundingClientRect()
     pieceName.style.left = `${event.clientX - area.left + 14}px`
     pieceName.style.top = `${event.clientY - area.top + 14}px`
@@ -102,9 +118,6 @@ function startGame(canvas: HTMLCanvasElement) {
     control.addEventListener('focusin', showBesideControl)
     control.addEventListener('focusout', hideName)
   }
-
-  showBoard()
-  view.start()
 }
 
 function showThatThe3dBoardIsUnavailable(canvas: HTMLCanvasElement) {
@@ -113,59 +126,18 @@ function showThatThe3dBoardIsUnavailable(canvas: HTMLCanvasElement) {
   document.querySelector<HTMLElement>('.no-3d')?.removeAttribute('hidden')
 }
 
-function describeBoard(board: Board) {
-  const pieces = board.listPieces()
-  const working = (kind: string) =>
-    pieces.filter((piece) => piece.kind === kind && board.isPoweredAt(piece.spot)).length
-  const parts = [
-    pluralize(pieces.length, ['peça', 'peças']),
-    ...(board.hasShortCircuit() ? ['curto-circuito'] : []),
-    ...[
-      { count: working('lamp'), words: ['lâmpada acesa', 'lâmpadas acesas'] },
-      { count: working('motor'), words: ['motor a rodar', 'motores a rodar'] },
-      { count: working('buzzer'), words: ['campainha a tocar', 'campainhas a tocar'] },
-    ]
-      .filter(({ count }) => count > 0)
-      .map(({ count, words }) => pluralize(count, words)),
-  ]
-  return parts.join(', ')
-}
-
-function pluralize(count: number, [one, other]: string[]) {
-  return `${count} ${new Intl.PluralRules('pt-PT').select(count) === 'one' ? one : other}`
-}
-
-function recallLevel() {
+function recallLevel(chosen: Game) {
   try {
-    return Math.min(Number(localStorage.getItem('blocolab-level')) || 0, challenges.length)
+    return Math.min(Number(localStorage.getItem(`blocolab-level-${chosen.id}`)) || 0, chosen.goals.length)
   } catch {
     return 0
   }
 }
 
-function rememberLevel(level: number) {
+function rememberLevel(chosen: Game, level: number) {
   try {
-    localStorage.setItem('blocolab-level', String(level))
+    localStorage.setItem(`blocolab-level-${chosen.id}`, String(level))
   } catch {
     return
   }
-}
-
-function nameOf(piece: Piece, board: Board) {
-  const working = board.isPoweredAt(piece.spot)
-  const strength = board.measureStrengthAt(piece.spot)
-  const weak = strength < 0.75
-  const strong = strength > 1.3
-  return {
-    battery: 'Pilha',
-    wire: 'Fio',
-    switch: `Interruptor (${piece.kind === 'switch' && piece.closed ? 'fechado' : 'aberto'})`,
-    lamp: `Lâmpada (${working ? `acesa${weak ? ' fraca' : strong ? ' forte' : ''}` : 'apagada'})`,
-    motor: `Motor (${working ? `a rodar${weak ? ' devagar' : strong ? ' depressa' : ''}` : 'parado'})`,
-    buzzer: `Campainha (${working ? 'a tocar' : 'calada'})`,
-  }[piece.kind]
-}
-
-function isABuzzerSounding(board: Board) {
-  return board.listPieces().some((piece) => piece.kind === 'buzzer' && board.isPoweredAt(piece.spot))
 }
