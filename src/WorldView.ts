@@ -4,7 +4,7 @@ import type { Position, World, WorldSize } from './World.ts'
 
 export type Pick = { cube?: Position; nextTo: Position }
 
-export type Column = { x: number; z: number }
+type Column = { x: number; z: number }
 
 export class WorldView {
   readonly camera: IsometricCamera

@@ -1,10 +1,10 @@
 import type { Position, World } from './World.ts'
-import type { WorldView } from './WorldView.ts'
+import type { Pick, WorldView } from './WorldView.ts'
 
 export type Tool = 'brush' | 'eraser'
 
 export class Painting {
-  private tool: Tool = 'brush'
+  private tool = tools.brush
   private strokeLevel?: number
 
   constructor(
@@ -14,7 +14,7 @@ export class Painting {
   ) {}
 
   chooseTool(tool: Tool) {
-    this.tool = tool
+    this.tool = tools[tool]
     this.view.hideGhost()
   }
 
@@ -38,8 +38,7 @@ export class Painting {
   private continueStroke(event: PointerEvent) {
     if (!event.isPrimary) return
     if (this.strokeLevel === undefined) return this.previewTarget(event)
-    const surfaceHeight = this.tool === 'brush' ? this.strokeLevel : this.strokeLevel + 1
-    const column = this.view.pickColumn(event, surfaceHeight)
+    const column = this.view.pickColumn(event, this.tool.findSurfaceHeight(this.strokeLevel))
     if (column) this.applyTool({ ...column, y: this.strokeLevel })
   }
 
@@ -49,21 +48,40 @@ export class Painting {
 
   private previewTarget(event: PointerEvent) {
     const target = this.findTarget(event)
-    if (!target) return this.view.hideGhost()
-    if (this.tool === 'brush') this.view.showPlacementGhost(target)
-    else this.view.showErasureGhost(target)
+    if (target) this.tool.preview(this.view, target)
+    else this.view.hideGhost()
   }
 
   private findTarget(event: PointerEvent) {
-    const pick = this.view.pick(event)
-    const target = this.tool === 'brush' ? pick?.nextTo : pick?.cube
+    const target = this.tool.findTarget(this.view.pick(event))
     return target && this.world.isInside(target) ? target : undefined
   }
 
   private applyTool(target: Position) {
-    if (this.tool === 'brush') this.world.placeCube(target)
-    else this.world.eraseCube(target)
+    this.tool.apply(this.world, target)
     this.onWorldChanged()
     this.view.hideGhost()
   }
+}
+
+type PaintingTool = {
+  findTarget(pick?: Pick): Position | undefined
+  findSurfaceHeight(strokeLevel: number): number
+  apply(world: World, target: Position): void
+  preview(view: WorldView, target: Position): void
+}
+
+const tools: Record<Tool, PaintingTool> = {
+  brush: {
+    findTarget: (pick) => pick?.nextTo,
+    findSurfaceHeight: (strokeLevel) => strokeLevel,
+    apply: (world, target) => world.placeCube(target),
+    preview: (view, target) => view.showPlacementGhost(target),
+  },
+  eraser: {
+    findTarget: (pick) => pick?.cube,
+    findSurfaceHeight: (strokeLevel) => strokeLevel + 1,
+    apply: (world, target) => world.eraseCube(target),
+    preview: (view, target) => view.showErasureGhost(target),
+  },
 }
