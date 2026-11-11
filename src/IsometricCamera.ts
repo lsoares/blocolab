@@ -4,7 +4,8 @@ export class IsometricCamera {
   readonly camera = new THREE.OrthographicCamera()
   private targetQuarterTurns = 0
   private shownQuarterTurns = 0
-  private targetZoom = 1
+  private zoomLevel = 0
+  private zoomSpeed = 0
   private aspect = 1
 
   constructor(
@@ -25,11 +26,15 @@ export class IsometricCamera {
   }
 
   zoomIn() {
-    this.targetZoom = Math.min(this.targetZoom * 1.25, 4)
+    this.pushZoom(0.35)
   }
 
   zoomOut() {
-    this.targetZoom = Math.max(this.targetZoom / 1.25, 0.5)
+    this.pushZoom(-0.35)
+  }
+
+  zoomWithWheel(scrolledPixels: number) {
+    this.pushZoom(-scrolledPixels * 0.0015)
   }
 
   fitTo(width: number, height: number) {
@@ -39,8 +44,20 @@ export class IsometricCamera {
   advance(seconds: number) {
     const easing = this.reducedMotion.matches ? 1 : 1 - Math.exp(-seconds * 12)
     this.shownQuarterTurns += (this.targetQuarterTurns - this.shownQuarterTurns) * easing
-    this.camera.zoom += (this.targetZoom - this.camera.zoom) * easing
+    this.glideZoom(seconds)
     this.placeCamera()
+  }
+
+  private pushZoom(distance: number) {
+    if (this.reducedMotion.matches) this.zoomLevel = clampZoomLevel(this.zoomLevel + distance)
+    else this.zoomSpeed += distance * zoomFrictionPerSecond
+  }
+
+  private glideZoom(seconds: number) {
+    const glidedLevel = this.zoomLevel + this.zoomSpeed * seconds
+    this.zoomLevel = clampZoomLevel(glidedLevel)
+    this.zoomSpeed = glidedLevel === this.zoomLevel ? this.zoomSpeed * Math.exp(-seconds * zoomFrictionPerSecond) : 0
+    this.camera.zoom = Math.exp(this.zoomLevel)
   }
 
   private placeCamera() {
@@ -64,4 +81,10 @@ export class IsometricCamera {
     this.camera.lookAt(0, 0, 0)
     this.camera.updateProjectionMatrix()
   }
+}
+
+const zoomFrictionPerSecond = 4
+
+function clampZoomLevel(level: number) {
+  return Math.min(Math.max(level, Math.log(0.5)), Math.log(4))
 }

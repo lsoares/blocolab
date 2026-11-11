@@ -38,8 +38,7 @@ function startGame(canvas: HTMLCanvasElement) {
     'wheel',
     (event) => {
       event.preventDefault()
-      if (event.deltaY < 0) view.camera.zoomIn()
-      else view.camera.zoomOut()
+      view.camera.zoomWithWheel(event.deltaMode === WheelEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY)
     },
     { passive: false },
   )
