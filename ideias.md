@@ -33,15 +33,23 @@ tem casas de ~46 px medidas a partir do ecrã, por isso ocupa o ecrã todo.
 **Som** (feito): a campainha zumbe de verdade enquanto toca; pára ao abrir o circuito e quando
 o separador fica escondido. Não há botão de silêncio (o volume é baixo); fica como ideia.
 
-**Desafios** (feitos): 12 objetivos seguidos, da lâmpada até ao curto-circuito de propósito.
+**Desafios** (feitos): 14 objetivos seguidos, da lâmpada até ao curto-circuito de propósito.
 Cada um tem uma dica; o botão "Próximo desafio" só aparece ao conseguir, "Saltar" serve para
 um desafio difícil, e o progresso fica guardado no browser. O tabuleiro começa vazio em cada
 desafio. Alguns objetivos são verificados "a imaginar" o que acontece se se tirar uma peça:
 lâmpadas em paralelo (a outra continua acesa), em série (a outra apaga) e interruptor geral
 (abri-lo pára tudo).
 
-Próximas ideias deste jogo: brilho da lâmpada (série vs. paralelo), mais pilhas, resistência,
-íman, ventoinha no motor, e objetos que caem no tabuleiro (o muro serve para isso).
+**Brilho** (feito): o jogo resolve o circuito como uma rede de resistências (a pilha empurra
+corrente; lâmpada, motor e campainha são resistências). Em série a corrente reparte-se e as
+lâmpadas ficam fracas; em paralelo cada uma recebe a pilha toda; duas pilhas em fila dão mais
+força. O brilho e o halo da lâmpada e a velocidade do motor seguem a força, e o nome ao passar
+o rato diz "acesa fraca" ou "acesa forte". As pilhas viram-se sozinhas para se ajudarem (as
+crianças não sabem de polaridade). 14 desafios, dois deles sobre brilho.
+
+Próximas ideias deste jogo: mais pilhas e polaridade a sério para os mais velhos (pilha ao
+contrário), resistência, íman, ventoinha no motor, volume da campainha pela força, e objetos
+que caem no tabuleiro (o muro serve para isso).
 
 As secções abaixo (blocos, rampas, água) são ideias anteriores; guardam-se para outros jogos.
 
