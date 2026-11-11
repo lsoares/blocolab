@@ -2,6 +2,7 @@ import './style.css'
 import { Board, type Piece } from './Board.ts'
 import { measureBoardThatFits } from './BoardCamera.ts'
 import { BoardView } from './BoardView.ts'
+import { BuzzerSound } from './BuzzerSound.ts'
 import { challenges, isMet } from './Challenges.ts'
 import { Placing, type Tool } from './Placing.ts'
 
@@ -33,8 +34,12 @@ function startGame(canvas: HTMLCanvasElement) {
     if (nextButton) nextButton.hidden = !achieved
     panel?.classList.toggle('done', achieved)
   }
+  const buzzerSound = new BuzzerSound()
+  document.addEventListener('visibilitychange', () => document.hidden && buzzerSound.silence())
   const showBoard = () => {
     showChallenge()
+    if (isABuzzerSounding(board)) buzzerSound.play()
+    else buzzerSound.silence()
     view.show(board)
     if (status) status.textContent = describeBoard(board)
     if (undoButton) undoButton.disabled = !board.canUndo()
@@ -137,4 +142,8 @@ function nameOf(piece: Piece, board: Board) {
     motor: `Motor (${working ? 'a rodar' : 'parado'})`,
     buzzer: `Campainha (${working ? 'a tocar' : 'calada'})`,
   }[piece.kind]
+}
+
+function isABuzzerSounding(board: Board) {
+  return board.listPieces().some((piece) => piece.kind === 'buzzer' && board.isPoweredAt(piece.spot))
 }
