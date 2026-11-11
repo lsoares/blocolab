@@ -92,6 +92,13 @@ export class Board {
     return this.measureCircuit().powered.some((powered) => powered.x === spot.x && powered.z === spot.z)
   }
 
+  measureStrengthAt(spot: Spot) {
+    const found = this.measureCircuit().strengths.find(
+      (working) => working.spot.x === spot.x && working.spot.z === spot.z,
+    )
+    return found?.strength ?? 0
+  }
+
   hasShortCircuit() {
     return this.measureCircuit().short
   }

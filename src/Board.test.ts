@@ -360,3 +360,69 @@ describe('Imagining changes', () => {
     assert.equal(imagined.isPoweredAt({ x: 1, z: 2 }), false)
   })
 })
+
+describe('Strength of the current', () => {
+  test('a lamp alone on a battery shines at full strength', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const strength = board.measureStrengthAt({ x: 1, z: 2 })
+
+    assert.ok(Math.abs(strength - 1) < 0.02, `strength was ${strength}`)
+  })
+
+  test('two lamps one after the other shine at about half strength', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBww', 'w..w', 'wLLw'])
+
+    const strength = board.measureStrengthAt({ x: 1, z: 2 })
+
+    assert.ok(strength > 0.45 && strength < 0.6, `strength was ${strength}`)
+  })
+
+  test('two lamps each on their own path shine almost at full strength', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'wLw', 'wLw'])
+
+    const strength = board.measureStrengthAt({ x: 1, z: 1 })
+
+    assert.ok(strength > 0.85, `strength was ${strength}`)
+  })
+
+  test('two batteries one after the other make the lamp shine stronger', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBBw', 'w..w', 'wLLw'])
+    board.eraseAt({ x: 2, z: 2 })
+
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 2 } })
+
+    assert.ok(board.measureStrengthAt({ x: 1, z: 2 }) > 1.5)
+  })
+
+  test('two batteries help each other whichever way they were drawn', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.l', 'wBw'])
+
+    const strength = board.measureStrengthAt({ x: 2, z: 1 })
+
+    assert.ok(strength > 1.5, `strength was ${strength}`)
+  })
+
+  test('a lamp that is dark has no strength', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w..', 'wLw'])
+
+    const strength = board.measureStrengthAt({ x: 1, z: 2 })
+
+    assert.equal(strength, 0)
+  })
+
+  test('a motor alone on a battery runs at full strength', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wMw'])
+
+    const strength = board.measureStrengthAt({ x: 1, z: 2 })
+
+    assert.ok(Math.abs(strength - 1) < 0.02, `strength was ${strength}`)
+  })
+})
