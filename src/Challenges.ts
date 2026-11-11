@@ -7,8 +7,11 @@ export type Challenge = {
     litLamps?: number
     runningMotors?: number
     soundingBuzzers?: number
-    switches?: number
     maxBatteries?: number
+    lampsEachOnTheirOwnPath?: true
+    lampsOneAfterTheOther?: true
+    mainSwitch?: true
+    shortCircuit?: true
   }
 }
 
@@ -30,8 +33,8 @@ export const challenges: Challenge[] = [
   },
   {
     goal: 'Acende a lâmpada e controla-a com um interruptor.',
-    hint: 'Põe um interruptor no anel e toca nele para ligar.',
-    needs: { litLamps: 1, switches: 1 },
+    hint: 'Põe um interruptor no anel e toca nele para ligar e desligar.',
+    needs: { litLamps: 1, mainSwitch: true },
   },
   {
     goal: 'Acende duas lâmpadas com uma só pilha.',
@@ -48,18 +51,76 @@ export const challenges: Challenge[] = [
     hint: 'Junta os três no mesmo anel e liga tudo de uma vez.',
     needs: { litLamps: 1, runningMotors: 1, soundingBuzzers: 1 },
   },
+  {
+    goal: 'Acende duas lâmpadas de modo a que, se tirares uma, a outra continue acesa.',
+    hint: 'Liga cada lâmpada à pilha pelo seu caminho, sem uma depender da outra (em paralelo).',
+    needs: { litLamps: 2, lampsEachOnTheirOwnPath: true },
+  },
+  {
+    goal: 'Acende duas lâmpadas de modo a que, se tirares uma, a outra se apague.',
+    hint: 'Põe as lâmpadas uma a seguir à outra, no mesmo anel (em série).',
+    needs: { litLamps: 2, lampsOneAfterTheOther: true },
+  },
+  {
+    goal: 'Faz dois motores rodar com uma só pilha.',
+    hint: 'Dois motores no mesmo anel, ou cada um pelo seu caminho.',
+    needs: { runningMotors: 2, maxBatteries: 1 },
+  },
+  {
+    goal: 'Faz um interruptor geral: a lâmpada, o motor e a campainha ligam e desligam todos com ele.',
+    hint: 'Põe o interruptor no anel que passa pelas três peças e toca nele para desligar tudo.',
+    needs: { litLamps: 1, runningMotors: 1, soundingBuzzers: 1, mainSwitch: true },
+  },
+  {
+    goal: 'Faz um curto-circuito de propósito.',
+    hint: 'Liga um fio direto de um lado da pilha ao outro. Vês que nada funciona? Numa pilha a sério isto aquece muito!',
+    needs: { shortCircuit: true },
+  },
 ]
 
 export function isMet(board: Board, { needs }: Challenge) {
   const pieces = board.listPieces()
-  const count = (kind: Piece['kind']) => pieces.filter((piece) => piece.kind === kind).length
-  const working = (kind: Piece['kind']) =>
-    pieces.filter((piece) => piece.kind === kind && board.isPoweredAt(piece.spot)).length
   return (
-    working('lamp') >= (needs.litLamps ?? 0) &&
-    working('motor') >= (needs.runningMotors ?? 0) &&
-    working('buzzer') >= (needs.soundingBuzzers ?? 0) &&
-    count('switch') >= (needs.switches ?? 0) &&
-    count('battery') <= (needs.maxBatteries ?? Number.POSITIVE_INFINITY)
+    countWorking(board, 'lamp') >= (needs.litLamps ?? 0) &&
+    countWorking(board, 'motor') >= (needs.runningMotors ?? 0) &&
+    countWorking(board, 'buzzer') >= (needs.soundingBuzzers ?? 0) &&
+    pieces.filter((piece) => piece.kind === 'battery').length <= (needs.maxBatteries ?? Number.POSITIVE_INFINITY) &&
+    (!needs.lampsEachOnTheirOwnPath || lampsRelation(board) === 'each on their own path') &&
+    (!needs.lampsOneAfterTheOther || lampsRelation(board) === 'one after the other') &&
+    (!needs.mainSwitch || hasMainSwitch(board)) &&
+    (!needs.shortCircuit || board.hasShortCircuit())
+  )
+}
+
+function countWorking(board: Board, kind: Piece['kind']) {
+  return board.listPieces().filter((piece) => piece.kind === kind && board.isPoweredAt(piece.spot)).length
+}
+
+function countWorkingLoads(board: Board) {
+  return countWorking(board, 'lamp') + countWorking(board, 'motor') + countWorking(board, 'buzzer')
+}
+
+function lampsRelation(board: Board) {
+  const pieces = board.listPieces()
+  const lit = pieces.filter((piece) => piece.kind === 'lamp' && board.isPoweredAt(piece.spot))
+  if (lit.length < 2) return 'not enough lamps'
+  const stillLit = lit.map((removed) =>
+    countWorking(board.withPieces(pieces.filter((piece) => piece !== removed)), 'lamp'),
+  )
+  if (stillLit.every((count) => count === lit.length - 1)) return 'each on their own path'
+  if (stillLit.every((count) => count === 0)) return 'one after the other'
+  return 'mixed'
+}
+
+function hasMainSwitch(board: Board) {
+  if (countWorkingLoads(board) === 0) return false
+  const pieces = board.listPieces()
+  return pieces.some(
+    (piece) =>
+      piece.kind === 'switch' &&
+      piece.closed &&
+      countWorkingLoads(
+        board.withPieces(pieces.map((other) => (other === piece ? { ...piece, closed: false } : other))),
+      ) === 0,
   )
 }

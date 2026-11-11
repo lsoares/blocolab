@@ -340,3 +340,23 @@ describe('Starting over', () => {
     assert.equal(board.canUndo(), false)
   })
 })
+
+describe('Imagining changes', () => {
+  test('imagining a board without a piece leaves the real board as it was', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    board.withPieces(board.listPieces().filter((piece) => piece.kind !== 'lamp'))
+
+    assert.equal(board.isPoweredAt({ x: 1, z: 2 }), true)
+  })
+
+  test('an imagined board without the lamp has no lamp to light', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const imagined = board.withPieces(board.listPieces().filter((piece) => piece.kind !== 'lamp'))
+
+    assert.equal(imagined.isPoweredAt({ x: 1, z: 2 }), false)
+  })
+})

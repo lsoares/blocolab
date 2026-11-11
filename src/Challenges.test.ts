@@ -103,6 +103,108 @@ describe('Challenges', () => {
   })
 })
 
+describe('Challenges about how the pieces are joined', () => {
+  test('two lamps each on their own path meet the parallel challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'wLw', 'wLw'])
+
+    const met = isMet(board, challenges[7])
+
+    assert.equal(met, true)
+  })
+
+  test('two lamps one after the other do not meet the parallel challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBww', 'w..w', 'wLLw'])
+
+    const met = isMet(board, challenges[7])
+
+    assert.equal(met, false)
+  })
+
+  test('two lamps one after the other meet the series challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBww', 'w..w', 'wLLw'])
+
+    const met = isMet(board, challenges[8])
+
+    assert.equal(met, true)
+  })
+
+  test('two lamps each on their own path do not meet the series challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'wLw', 'wLw'])
+
+    const met = isMet(board, challenges[8])
+
+    assert.equal(met, false)
+  })
+
+  test('two motors on one battery meet the two motors challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBww', 'w..w', 'wMMw'])
+
+    const met = isMet(board, challenges[9])
+
+    assert.equal(met, true)
+  })
+
+  test('a switch that puts the lamp out when opened meets the switch challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'c.w', 'wLw'])
+
+    const met = isMet(board, challenges[3])
+
+    assert.equal(met, true)
+  })
+
+  test('a switch off the loop does not meet the switch challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+    board.placePiece({ kind: 'switch', spot: { x: 5, z: 2 }, axis: 'horizontal', closed: true })
+
+    const met = isMet(board, challenges[3])
+
+    assert.equal(met, false)
+  })
+
+  test('one switch that stops the lamp, the motor and the buzzer meets the main switch challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBwww', 'c...w', 'wLMZw'])
+
+    const met = isMet(board, challenges[10])
+
+    assert.equal(met, true)
+  })
+
+  test('three working pieces without a switch do not meet the main switch challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBwww', 'w...w', 'wLMZw'])
+
+    const met = isMet(board, challenges[10])
+
+    assert.equal(met, false)
+  })
+
+  test('a wire straight across the battery meets the short circuit challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'www'])
+
+    const met = isMet(board, challenges[11])
+
+    assert.equal(met, true)
+  })
+
+  test('a working loop does not meet the short circuit challenge', () => {
+    const board = new Board({ columns: 8, rows: 6 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const met = isMet(board, challenges[11])
+
+    assert.equal(met, false)
+  })
+})
+
 function draw(board: Board, rows: string[]) {
   rows.forEach((row, z) => {
     for (const [x, symbol] of [...row].entries()) {

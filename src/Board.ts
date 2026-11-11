@@ -45,6 +45,12 @@ export class Board {
     this.change(this.pieces.map((placed) => (placed === piece ? { ...piece, closed: !piece.closed } : placed)))
   }
 
+  withPieces(pieces: Piece[]) {
+    const imagined = new Board(this.size)
+    imagined.pieces = pieces
+    return imagined
+  }
+
   startOver() {
     this.pieces = []
     this.undoable.length = 0
