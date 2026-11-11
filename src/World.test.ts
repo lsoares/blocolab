@@ -39,6 +39,24 @@ describe('Placing blocks', () => {
     ])
   })
 
+  test('a block over another one has no room', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBlock({ kind: 'cube', origin: { x: 0, z: 0 }, size: { width: 3, height: 1, depth: 3 } })
+
+    const hasRoom = world.hasRoomFor({ kind: 'cube', origin: { x: 2, z: 2 }, size: { width: 2, height: 1, depth: 2 } })
+
+    assert.equal(hasRoom, false)
+  })
+
+  test('a block on free ground has room', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBlock({ kind: 'cube', origin: { x: 0, z: 0 }, size: { width: 3, height: 1, depth: 3 } })
+
+    const hasRoom = world.hasRoomFor({ kind: 'cube', origin: { x: 3, z: 0 }, size: { width: 2, height: 1, depth: 2 } })
+
+    assert.equal(hasRoom, true)
+  })
+
   test('a block cannot reach outside the world', () => {
     const world = new World({ width: 8, height: 3, depth: 8 })
 

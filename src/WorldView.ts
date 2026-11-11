@@ -58,10 +58,11 @@ export class WorldView {
   }
 
   showPlacementGhost(block: Block) {
-    this.ghost.cube.visible = block.kind === 'cube'
-    this.ghost.ramp.visible = block.kind === 'ramp'
-    this.ghost.erasure.visible = false
-    this.moveGhostOnto(block)
+    this.showShapeGhost(block, this.ghost.placementLook)
+  }
+
+  showBlockedGhost(block: Block) {
+    this.showShapeGhost(block, this.ghost.blockedLook)
   }
 
   showErasureGhost(block: Block) {
@@ -107,6 +108,15 @@ export class WorldView {
       -((pointer.clientY - bounds.top) / bounds.height) * 2 + 1,
     )
     this.raycaster.setFromCamera(screenPoint, this.camera.camera)
+  }
+
+  private showShapeGhost(block: Block, look: THREE.MeshBasicMaterial) {
+    this.ghost.cube.visible = block.kind === 'cube'
+    this.ghost.ramp.visible = block.kind === 'ramp'
+    this.ghost.cube.material = look
+    this.ghost.ramp.material = look
+    this.ghost.erasure.visible = false
+    this.moveGhostOnto(block)
   }
 
   private moveGhostOnto(block: Block) {
@@ -176,6 +186,12 @@ function createGhost() {
     opacity: 0.45,
     depthWrite: false,
   })
+  const blockedLook = new THREE.MeshBasicMaterial({
+    color: '#ff3b3b',
+    transparent: true,
+    opacity: 0.6,
+    depthWrite: false,
+  })
   const box = new THREE.BoxGeometry(1.02, 1.02, 1.02)
   const cube = new THREE.Mesh(box, placementLook)
   const ramp = new THREE.Mesh(createRampGeometry().scale(1.02, 1.02, 1.02), placementLook)
@@ -187,7 +203,13 @@ function createGhost() {
     new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: '#7a0000' })),
     createCross(),
   )
-  const ghost = Object.assign(new THREE.Group().add(cube, ramp, erasure), { cube, ramp, erasure })
+  const ghost = Object.assign(new THREE.Group().add(cube, ramp, erasure), {
+    cube,
+    ramp,
+    erasure,
+    placementLook,
+    blockedLook,
+  })
   ghost.matrixAutoUpdate = false
   ghost.visible = false
   return ghost

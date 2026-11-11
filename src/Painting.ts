@@ -46,7 +46,7 @@ export class Painting {
     if (this.tool === 'eraser') return this.startErasing(spot)
     this.gesture = 'drawing'
     this.drawingFrom = spot
-    this.view.showPlacementGhost(this.draw(this.tool, spot))
+    this.previewBlock(this.draw(this.tool, spot))
   }
 
   private move(event: PointerEvent) {
@@ -54,7 +54,7 @@ export class Painting {
     const spot = this.findSpot(event)
     if (!spot) return
     if (this.gesture === 'erasing') return this.erase(spot)
-    if (this.gesture === 'drawing' && this.tool !== 'eraser') this.view.showPlacementGhost(this.draw(this.tool, spot))
+    if (this.gesture === 'drawing' && this.tool !== 'eraser') this.previewBlock(this.draw(this.tool, spot))
     else this.preview(spot)
   }
 
@@ -92,9 +92,14 @@ export class Painting {
 
   private preview(spot: Spot) {
     const block = this.world.findBlockAt(spot)
-    if (this.tool !== 'eraser') this.view.showPlacementGhost(this.draw(this.tool, spot))
+    if (this.tool !== 'eraser') this.previewBlock(this.draw(this.tool, spot))
     else if (block) this.view.showErasureGhost(block)
     else this.view.hideGhost()
+  }
+
+  private previewBlock(block: Block) {
+    if (this.world.hasRoomFor(block)) this.view.showPlacementGhost(block)
+    else this.view.showBlockedGhost(block)
   }
 
   private findSpot(event: PointerEvent) {

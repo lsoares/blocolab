@@ -19,8 +19,12 @@ export class World {
   }
 
   placeBlock(block: Block) {
-    if (!this.fits(block) || this.blocks.some((placed) => overlaps(placed, block))) return
+    if (!this.hasRoomFor(block)) return
     this.change([...this.blocks, block])
+  }
+
+  hasRoomFor(block: Block) {
+    return this.fits(block) && !this.blocks.some((placed) => overlaps(placed, block))
   }
 
   eraseBlockAt(spot: Spot) {
