@@ -20,6 +20,7 @@ function startGame(canvas: HTMLCanvasElement) {
   const goal = panel?.querySelector('.goal')
   const hint = panel?.querySelector('.hint')
   const nextButton = panel?.querySelector<HTMLButtonElement>('.next')
+  const skipButton = panel?.querySelector<HTMLButtonElement>('.skip')
   let level = recallLevel()
   let achieved = false
   const showChallenge = () => {
@@ -32,6 +33,7 @@ function startGame(canvas: HTMLCanvasElement) {
     }
     if (hint) hint.textContent = challenge ? `Dica: ${challenge.hint}` : ''
     if (nextButton) nextButton.hidden = !achieved
+    if (skipButton) skipButton.hidden = achieved || !challenge
     panel?.classList.toggle('done', achieved)
   }
   const buzzerSound = new BuzzerSound()
@@ -51,14 +53,16 @@ function startGame(canvas: HTMLCanvasElement) {
     radio.addEventListener('change', () => placing.chooseTool(radio.value as Tool))
   }
 
-  nextButton?.addEventListener('click', () => {
+  const goToNextChallenge = () => {
     level += 1
     achieved = false
     board.startOver()
     rememberLevel(level)
     showBoard()
     canvas.focus()
-  })
+  }
+  nextButton?.addEventListener('click', goToNextChallenge)
+  skipButton?.addEventListener('click', goToNextChallenge)
 
   const undo = () => {
     board.undo()
@@ -83,6 +87,26 @@ function startGame(canvas: HTMLCanvasElement) {
     pieceName.removeAttribute('hidden')
   })
   canvas.addEventListener('pointerleave', () => pieceName?.setAttribute('hidden', ''))
+  for (const control of document.querySelectorAll<HTMLElement>('.toolbar [data-name]')) {
+    const showBesideControl = () => {
+      if (!pieceName) return
+      const box = control.getBoundingClientRect()
+      const area = canvas.parentElement?.getBoundingClientRect()
+      pieceName.textContent = control.dataset.name ?? ''
+      pieceName.style.left = `${box.right - (area?.left ?? 0) + 10}px`
+      pieceName.style.top = `${box.top - (area?.top ?? 0) + box.height / 2}px`
+      pieceName.classList.add('beside')
+      pieceName.removeAttribute('hidden')
+    }
+    const hideName = () => {
+      pieceName?.setAttribute('hidden', '')
+      pieceName?.classList.remove('beside')
+    }
+    control.addEventListener('pointerenter', showBesideControl)
+    control.addEventListener('pointerleave', hideName)
+    control.addEventListener('focusin', showBesideControl)
+    control.addEventListener('focusout', hideName)
+  }
 
   showBoard()
   view.start()

@@ -179,3 +179,12 @@ test('pieces turn by themselves to meet the wires around them', async ({ page })
 
   await expect(circuit.getStatus()).toHaveText('8 peças, 1 lâmpada acesa')
 })
+
+test('hovering a tool says its name', async ({ page }) => {
+  const circuit = new CircuitPage(page)
+  await circuit.open()
+
+  await circuit.hoverTool('Lâmpada')
+
+  await expect(circuit.getPieceName()).toHaveText('Lâmpada')
+})

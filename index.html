@@ -10,7 +10,7 @@
     <aside class="toolbar">
       <fieldset>
         <legend class="visually-hidden">Peça</legend>
-        <label title="Pilha">
+        <label data-name="Pilha">
           <input type="radio" name="tool" value="battery" checked />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <rect x="2" y="7" width="17" height="10" rx="2" fill="var(--battery)" />
@@ -20,7 +20,7 @@
           </svg>
           <span class="visually-hidden">Pilha</span>
         </label>
-        <label title="Fio">
+        <label data-name="Fio">
           <input type="radio" name="tool" value="wire" />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M5 12h14" stroke="var(--wire)" stroke-width="4" stroke-linecap="round" />
@@ -29,7 +29,7 @@
           </svg>
           <span class="visually-hidden">Fio</span>
         </label>
-        <label title="Interruptor">
+        <label data-name="Interruptor">
           <input type="radio" name="tool" value="switch" />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <circle cx="5" cy="17" r="2.4" fill="var(--gold)" />
@@ -38,7 +38,7 @@
           </svg>
           <span class="visually-hidden">Interruptor</span>
         </label>
-        <label title="Lâmpada">
+        <label data-name="Lâmpada">
           <input type="radio" name="tool" value="lamp" />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <circle cx="12" cy="10" r="7" fill="var(--bulb)" />
@@ -46,7 +46,7 @@
           </svg>
           <span class="visually-hidden">Lâmpada</span>
         </label>
-        <label title="Motor">
+        <label data-name="Motor">
           <input type="radio" name="tool" value="motor" />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" fill="var(--motor)" />
@@ -54,7 +54,7 @@
           </svg>
           <span class="visually-hidden">Motor</span>
         </label>
-        <label title="Campainha">
+        <label data-name="Campainha">
           <input type="radio" name="tool" value="buzzer" />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <circle cx="8" cy="12" r="5.5" fill="var(--buzzer)" />
@@ -62,19 +62,20 @@
           </svg>
           <span class="visually-hidden">Campainha</span>
         </label>
-        <label title="Borracha">
+        <label data-name="Borracha">
           <input type="radio" name="tool" value="eraser" />
           <span aria-hidden="true">🧽</span>
           <span class="visually-hidden">Borracha</span>
         </label>
       </fieldset>
-      <button type="button" class="undo" aria-label="Desfazer" title="Desfazer" disabled>↶</button>
+      <button type="button" class="undo" aria-label="Desfazer" data-name="Desfazer" disabled>↶</button>
       <output class="visually-hidden" aria-live="polite">0 peças</output>
     </aside>
     <main>
       <section class="challenge" aria-label="Desafio" aria-live="polite">
         <p class="goal"></p>
         <button type="button" class="next" hidden>Próximo desafio</button>
+        <button type="button" class="skip">Saltar</button>
         <p class="hint"></p>
       </section>
       <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the board is a keyboard-driven widget, which is what the application role announces -->
