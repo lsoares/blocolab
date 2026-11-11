@@ -199,7 +199,7 @@ fazer um rio ou uma pista de bolas e quer mostrar a alguém?_
 
 ### Âmbito
 
-- Mundo 32×32×12, câmara isométrica que roda em 90°.
+- Mundo 32×32 com **um só nível de blocos** (sem empilhar), câmara isométrica que roda em 90°.
 - 6 blocos: Cubo, Rampa, Bola, Nascente, Ralo, Alvo.
 - 5 ferramentas: Pincel, Borracha, Pá, Desfazer, Câmara.
 - Modos ✏️ Construir / ▶ Correr (repõe ao voltar).
@@ -214,7 +214,7 @@ Programação, lógica, luz, ímanes, multijogador, partilha online, gráficos, 
 ### Fatias verticais (cada uma jogável)
 
 1. Grelha + câmara + pôr/tirar cubos (rato e toque).
-2. Desfazer + rampas com rotação + ferramenta Pá.
+2. Desfazer + rampas com rotação. (A Pá fica para quando houver mais de um nível.)
 3. Bola + Rapier + modo Construir/Correr.
 4. Água em autómato celular (nascente, ralo, escorrer); superfície simples.
 5. Bolas a flutuar e a ser levadas pela corrente.
@@ -222,14 +222,19 @@ Programação, lógica, luz, ímanes, multijogador, partilha online, gráficos, 
 7. Guardar/carregar local.
 8. Teste com crianças reais → decidir o que vem a seguir.
 
-### Stack sugerida
+### Stack
 
-- **Vite + TypeScript + three.js** — ou **react-three-fiber + drei + @react-three/rapier**
-  se a UI das barras for em React (acelera muito).
-- **Rapier** (`@dimforge/rapier3d-compat`) para física.
-- **Modelo do mundo sem three.js** (grelha, blocos, água, regras dos desafios) — testável com Vitest,
-  rápido, e a renderização é só um adaptador. A simulação de água é lógica pura: ótima para testes.
-- **Playwright** para os fluxos de UI (pintar, correr, ganhar desafio).
+- **Vite + TypeScript + three.js**, sem framework de UI: a barra é HTML nativo com CSS simples
+  (tokens em custom properties, modo escuro, `prefers-reduced-motion`).
+- **Biome** (lint + formatação), **knip** (código morto), **mise** (versão do Node).
+- **Modelo do mundo sem three.js** (grelha, blocos, água, regras dos desafios) — é aqui que vive o
+  comportamento, por isso é aqui que está a maioria dos testes, com `node:test`. A simulação de água
+  é lógica pura: ótima para testes.
+- **Playwright** só para poucos percursos críticos (pintar, apagar, teclado, ganhar um desafio): num
+  canvas só se clica por coordenadas, por isso os testes de UI são caros e frágeis.
+- O mundo também se usa só com teclado (cursor com setas, Enter usa a ferramenta) — acessibilidade e
+  uma forma estável de os testes de UI conduzirem o jogo.
+- **Rapier** (`@dimforge/rapier3d-compat`) para física — dependência a aprovar quando chegar a fatia 3.
 - PWA para funcionar offline em tablets.
 
 ---
