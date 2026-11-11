@@ -105,6 +105,12 @@ export class Board {
     return this.measureCircuit().live.some((live) => live.x === spot.x && live.z === spot.z)
   }
 
+  isPlusFirstAt(spot: Spot) {
+    return this.measureCircuit().polarities.some(
+      (battery) => battery.spot.x === spot.x && battery.spot.z === spot.z && battery.plusFirst,
+    )
+  }
+
   listFlowsAt(spot: Spot) {
     return this.measureCircuit()
       .flows.filter((flow) => flow.spot.x === spot.x && flow.spot.z === spot.z)

@@ -7,6 +7,7 @@ export type CircuitState = {
   strengths: { spot: Spot; strength: number }[]
   live: Spot[]
   flows: { spot: Spot; side: Side; out: number }[]
+  polarities: { spot: Spot; plusFirst: boolean }[]
 }
 
 export function analyzeCircuit(pieces: Piece[]): CircuitState {
@@ -32,7 +33,7 @@ export function analyzeCircuit(pieces: Piece[]): CircuitState {
       return { piece, from: nodes.find(terminalOf(piece, first)), to: nodes.find(terminalOf(piece, second)) }
     })
   if (branches.some(({ piece, from, to }) => piece.kind === 'battery' && from === to)) {
-    return { short: true, powered: [], strengths: [], live: [], flows: [] }
+    return { short: true, powered: [], strengths: [], live: [], flows: [], polarities: [] }
   }
 
   const closedLoops = findBlocks(branches.filter(({ from, to }) => from !== to)).filter((block) =>
@@ -50,7 +51,14 @@ export function analyzeCircuit(pieces: Piece[]): CircuitState {
   const strengths = network.strengths.filter(({ spot }) =>
     powered.some((working) => working.x === spot.x && working.z === spot.z),
   )
-  return { short: false, powered, strengths, live, flows: shareFlowAmongPipes(pieces, network.injections) }
+  return {
+    short: false,
+    powered,
+    strengths,
+    live,
+    flows: shareFlowAmongPipes(pieces, network.injections),
+    polarities: network.polarities,
+  }
 }
 
 export function turnToMeetNeighbours(pieces: Piece[]): Piece[] {
@@ -186,6 +194,7 @@ function measureNetwork(branches: Branch[]) {
   const voltages = solveVoltages(branches, nodeNumbers, orientations)
   const strengths: { spot: Spot; strength: number }[] = []
   const injections: Injection[] = []
+  const polarities: CircuitState['polarities'] = []
   let batteryNumber = 0
   for (const { piece, from, to } of branches) {
     const [first, second] = terminalSidesOf(piece)
@@ -195,6 +204,7 @@ function measureNetwork(branches: Branch[]) {
       injections.push({ cell: stepFrom(piece.spot, side), facing: opposite[side], amount })
     if (piece.kind === 'battery') {
       const plusIsFirst = orientations[batteryNumber++]
+      polarities.push({ spot: piece.spot, plusFirst: plusIsFirst })
       const throughBattery = (batteryVoltage - (plusIsFirst ? drop : -drop)) / resistance
       enter(plusIsFirst ? first : second, throughBattery)
       enter(plusIsFirst ? second : first, -throughBattery)
@@ -207,7 +217,7 @@ function measureNetwork(branches: Branch[]) {
     enter(first, -drop / resistance)
     enter(second, drop / resistance)
   }
-  return { strengths, injections }
+  return { strengths, injections, polarities }
 }
 
 function shareFlowAmongPipes(pieces: Piece[], injections: Injection[]) {

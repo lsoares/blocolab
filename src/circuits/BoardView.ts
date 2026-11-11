@@ -41,6 +41,7 @@ export class BoardView {
         powered: board.isPoweredAt(piece.spot),
         strength: board.measureStrengthAt(piece.spot),
         linkedSides: board.listLinkedSides(piece.spot),
+        plusFirst: board.isPlusFirstAt(piece.spot),
         stillLife: this.reducedMotion.matches,
       })
       this.pieces.add(model)
@@ -50,7 +51,13 @@ export class BoardView {
 
   showPlacementGhost(piece: Piece) {
     disposeChildrenOf(this.ghost)
-    const { model } = createPieceModel(piece, { powered: false, strength: 0, linkedSides: [], stillLife: true })
+    const { model } = createPieceModel(piece, {
+      powered: false,
+      strength: 0,
+      linkedSides: [],
+      plusFirst: false,
+      stillLife: true,
+    })
     showAsGhost(model)
     this.ghost.add(model)
   }
@@ -69,7 +76,13 @@ export class BoardView {
   }
 }
 
-type PieceLook = { powered: boolean; strength: number; linkedSides: Side[]; stillLife: boolean }
+type PieceLook = {
+  powered: boolean
+  strength: number
+  linkedSides: Side[]
+  plusFirst: boolean
+  stillLife: boolean
+}
 
 const cableRadius = 0.14
 
@@ -82,6 +95,7 @@ function createPieceModel(piece: Piece, look: PieceLook) {
   }
   const inner = new THREE.Group()
   inner.rotation.y = piece.axis === 'horizontal' ? 0 : Math.PI / 2
+  if (piece.kind === 'battery' && needsTurningAround(piece.axis, look.plusFirst)) inner.rotation.y += Math.PI
   model.add(inner)
   const { parts, animate } = {
     battery: createBattery,
@@ -92,6 +106,10 @@ function createPieceModel(piece: Piece, look: PieceLook) {
   }[piece.kind](piece, look)
   inner.add(...parts)
   return { model, animate }
+}
+
+function needsTurningAround(axis: 'horizontal' | 'vertical', plusFirst: boolean) {
+  return axis === 'horizontal' ? plusFirst : !plusFirst
 }
 
 type PieceParts = { parts: THREE.Object3D[]; animate?: (seconds: number) => void }

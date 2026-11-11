@@ -505,3 +505,25 @@ describe('Direction of the flow', () => {
     assert.deepEqual(flows, [])
   })
 })
+
+describe('Polarity of the batteries', () => {
+  test('batteries on opposite sides of a loop point opposite ways on the table', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBww', 'w..w', 'wLBw'])
+
+    const top = board.isPlusFirstAt({ x: 1, z: 0 })
+    const bottom = board.isPlusFirstAt({ x: 2, z: 2 })
+
+    assert.notEqual(top, bottom)
+  })
+
+  test('two batteries side by side in a loop face the same way', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBBw', 'w..w', 'wLLw'])
+
+    const left = board.isPlusFirstAt({ x: 1, z: 0 })
+    const right = board.isPlusFirstAt({ x: 2, z: 0 })
+
+    assert.equal(left, right)
+  })
+})
