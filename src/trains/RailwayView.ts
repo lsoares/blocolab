@@ -12,6 +12,7 @@ import {
 } from '../stage/Parts.ts'
 import { bridgeRise, type Car } from './Journey.ts'
 import type { Piece, Railway } from './Railway.ts'
+import { advanceRoadCar, type RoadCar } from './RoadCar.ts'
 
 export class RailwayView {
   private readonly stage: BoardStage
@@ -58,9 +59,14 @@ export class RailwayView {
   }
 
   private moveGates(barrier: Barrier, cars: Car[], seconds: number) {
-    const near = cars.some((car) => Math.hypot(car.x - (barrier.spot.x + 0.5), car.z - (barrier.spot.z + 0.5)) < 1.3)
+    const near = cars.some((car) => Math.hypot(car.x - (barrier.spot.x + 0.5), car.z - (barrier.spot.z + 0.5)) < 2.4)
     barrier.openness += ((near ? 0 : 1) - barrier.openness) * Math.min(1, seconds * 5)
     for (const gate of barrier.gates) gate.rotation.z = barrier.openness * 1.2
+    for (const roadCar of barrier.roadCars) {
+      roadCar.car = advanceRoadCar(roadCar.car, seconds, barrier.openness < 0.5)
+      roadCar.model.visible = roadCar.car.pause <= 0
+      roadCar.model.position.z = roadCar.direction * roadCar.car.progress
+    }
     barrier.lamps.forEach((lamp, index) => {
       const lit = near && Math.floor(this.clock * 3) % 2 === index
       lamp.material.color.set(lit ? '#ff4d4d' : '#5a1f1f')
@@ -108,13 +114,14 @@ type Barrier = {
   spot: Spot
   gates: THREE.Group[]
   lamps: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  roadCars: { model: THREE.Group; direction: 1 | -1; car: RoadCar }[]
   openness: number
 }
 
 function createPieceModel(piece: Piece, linkedSides: Side[], waterSides: Side[]) {
   const model = new THREE.Group()
   model.position.set(piece.spot.x + 0.5, 0, piece.spot.z + 0.5)
-  let barrier: Pick<Barrier, 'gates' | 'lamps'> | undefined
+  let barrier: Pick<Barrier, 'gates' | 'lamps' | 'roadCars'> | undefined
   if (piece.kind === 'track') model.add(...createTrack(linkedSides))
   else if (piece.kind === 'tree') model.add(createTree(piece.spot))
   else if (piece.kind === 'river') model.add(...createWater(waterSides))
@@ -128,7 +135,7 @@ function createPieceModel(piece: Piece, linkedSides: Side[], waterSides: Side[])
     if (piece.kind === 'tunnel') inner.add(...createTunnel())
     if (piece.kind === 'signal') inner.add(...createSignal(piece.go))
     if (piece.kind === 'barrier') {
-      const crossing = createBarrier()
+      const crossing = createBarrier(piece.spot)
       inner.add(...crossing.parts)
       barrier = crossing
     }
@@ -151,10 +158,10 @@ function createWaterArm(side: Side) {
   return [box(x !== 0 ? [0.5, 0.06, 0.64] : [0.64, 0.06, 0.5], water, [x * 0.25, 0.03, z * 0.25])]
 }
 
-function createBarrier() {
+function createBarrier(spot: Spot) {
   const gates: THREE.Group[] = []
   const lamps: Barrier['lamps'] = []
-  const parts: THREE.Object3D[] = [box([0.36, 0.012, 1], '#6b6f76', [0, 0.116, 0])]
+  const parts: THREE.Object3D[] = [box([0.36, 0.012, 1.3], '#6b6f76', [0, 0.116, 0])]
   for (const side of [-1, 1]) {
     const gate = new THREE.Group()
     gate.position.set(-0.2, 0.22, side * 0.42)
@@ -170,7 +177,22 @@ function createBarrier() {
     lamps.push(lamp)
     parts.push(standingCylinder(0.035, 0.22, '#555a60', [-0.2, 0.11, side * 0.42]), gate, lamp)
   }
-  return { parts, gates, lamps }
+  const colours = ['#f0c040', '#40a0f0', '#e06080', '#60c080']
+  const roadCars = ([1, -1] as const).map((direction, lane) => {
+    const model = createRoadCar(colours[(spot.x * 3 + spot.z * 5 + lane) % colours.length])
+    model.position.set(direction * -0.09, 0.122, 0)
+    model.rotation.y = direction === 1 ? 0 : Math.PI
+    model.visible = false
+    parts.push(model)
+    return { model, direction, car: { progress: -0.62, pause: 1 + lane * 1.2 } }
+  })
+  return { parts, gates, lamps, roadCars }
+}
+
+function createRoadCar(colour: string) {
+  const car = new THREE.Group()
+  car.add(box([0.13, 0.07, 0.22], colour, [0, 0.035, 0]), box([0.1, 0.06, 0.1], '#cfe8ff', [0, 0.1, -0.015]))
+  return car
 }
 
 function createPoints(aimedAt: Side, linkedSides: Side[]) {
