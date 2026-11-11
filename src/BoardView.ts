@@ -191,25 +191,26 @@ function createWire(linkedSides: Side[]) {
   return [part(new THREE.SphereGeometry(cableRadius, 16, 12), '#2b6cb0', [0, cableRadius, 0]), ...arms]
 }
 
+function createTerminals(length = 0.22) {
+  return [-1, 1].map((end) => lyingCylinder(cableRadius, length, '#d9b44a', [end * (0.5 - length / 2), cableRadius, 0]))
+}
+
 function createTile(color: string) {
-  return [
-    box([0.94, 0.1, 0.94], color, [0, 0.05, 0]),
-    ...[-1, 1].map((end) => lyingCylinder(cableRadius, 0.22, '#d9b44a', [end * 0.39, cableRadius, 0])),
-  ]
+  return [box([0.94, 0.1, 0.94], color, [0, 0.05, 0]), ...createTerminals()]
 }
 
 function createBattery(): PieceParts {
   const sign = (size: [number, number, number], position: [number, number, number]) => box(size, '#ffffff', position)
   return {
     parts: [
-      ...createTile('#cfd5dc'),
-      lyingCylinder(0.27, 0.6, '#2b2d33', [0, 0.34, 0]),
-      lyingCylinder(0.275, 0.3, '#d98e32', [0.15, 0.34, 0]),
-      lyingCylinder(0.27, 0.03, '#9aa3ad', [-0.315, 0.34, 0]),
-      lyingCylinder(0.1, 0.1, '#e8edf2', [0.35, 0.34, 0]),
-      sign([0.16, 0.01, 0.04], [0.15, 0.62, 0]),
-      sign([0.04, 0.01, 0.16], [0.15, 0.62, 0]),
-      sign([0.14, 0.01, 0.04], [-0.12, 0.615, 0]),
+      ...createTerminals(),
+      lyingCylinder(0.27, 0.6, '#2b2d33', [0, 0.27, 0]),
+      lyingCylinder(0.275, 0.3, '#d98e32', [0.15, 0.27, 0]),
+      lyingCylinder(0.27, 0.03, '#9aa3ad', [-0.315, 0.27, 0]),
+      lyingCylinder(0.1, 0.1, '#e8edf2', [0.35, 0.27, 0]),
+      sign([0.16, 0.01, 0.04], [0.15, 0.55, 0]),
+      sign([0.04, 0.01, 0.16], [0.15, 0.55, 0]),
+      sign([0.14, 0.01, 0.04], [-0.12, 0.545, 0]),
     ],
   }
 }
@@ -240,7 +241,7 @@ function createLamp(_piece: Piece, { powered, strength }: PieceLook): PieceParts
       ? new THREE.MeshBasicMaterial({ color: new THREE.Color('#8f7a3c').lerp(new THREE.Color('#fffbe6'), glow) })
       : new THREE.MeshLambertMaterial({ color: '#dfe8ee', transparent: true, opacity: 0.9 }),
   )
-  bulb.position.set(0, 0.52, 0)
+  bulb.position.set(0, 0.5, 0)
   bulb.castShadow = !powered
   const halo = new THREE.Mesh(
     new THREE.SphereGeometry(0.4 + 0.3 * glow, 24, 16),
@@ -249,8 +250,8 @@ function createLamp(_piece: Piece, { powered, strength }: PieceLook): PieceParts
   halo.position.copy(bulb.position)
   return {
     parts: [
-      ...createTile('#e6e2d5'),
-      standingCylinder(0.22, 0.2, '#9aa0a6', [0, 0.2, 0]),
+      ...createTerminals(0.3),
+      standingCylinder(0.24, 0.26, '#9aa0a6', [0, 0.13, 0]),
       bulb,
       ...(powered ? [halo] : []),
     ],
