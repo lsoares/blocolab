@@ -151,6 +151,8 @@ function standingCylinder(radius: number, height: number, color: string, positio
   return part(new THREE.CylinderGeometry(radius, radius, height, 24), color, position)
 }
 
+const cableRadius = 0.14
+
 function createPieceModel(piece: Piece, look: PieceLook) {
   const model = new THREE.Group()
   model.position.set(piece.spot.x + 0.5, 0, piece.spot.z + 0.5)
@@ -177,15 +179,22 @@ type PieceParts = { parts: THREE.Object3D[]; animate?: (seconds: number) => void
 function createWire(linkedSides: Side[]) {
   const arms = linkedSides.map((side) => {
     const [dx, dz] = { north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0] }[side]
-    return box([dx === 0 ? 0.34 : 0.5, 0.12, dz === 0 ? 0.34 : 0.5], '#2b6cb0', [dx * 0.25, 0.06, dz * 0.25])
+    const arm = part(new THREE.CylinderGeometry(cableRadius, cableRadius, 0.5, 16), '#2b6cb0', [
+      dx * 0.25,
+      cableRadius,
+      dz * 0.25,
+    ])
+    if (dx !== 0) arm.rotation.z = Math.PI / 2
+    else arm.rotation.x = Math.PI / 2
+    return arm
   })
-  return [box([0.4, 0.12, 0.4], '#2b6cb0', [0, 0.06, 0]), ...arms]
+  return [part(new THREE.SphereGeometry(cableRadius, 16, 12), '#2b6cb0', [0, cableRadius, 0]), ...arms]
 }
 
 function createTile(color: string) {
   return [
     box([0.94, 0.1, 0.94], color, [0, 0.05, 0]),
-    ...[-1, 1].map((end) => box([0.2, 0.16, 0.34], '#d9b44a', [end * 0.4, 0.08, 0])),
+    ...[-1, 1].map((end) => lyingCylinder(cableRadius, 0.22, '#d9b44a', [end * 0.39, cableRadius, 0])),
   ]
 }
 
