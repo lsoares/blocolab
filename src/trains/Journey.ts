@@ -1,8 +1,8 @@
 import { opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
 import { chooseExit, findStartTraversal, type Traversal, terminalSidesOf } from './Rails.ts'
-import type { Railway } from './Railway.ts'
+import type { Piece, Railway } from './Railway.ts'
 
-export type Car = { x: number; z: number; heading: number; hidden: boolean }
+export type Car = { x: number; z: number; heading: number; hidden: boolean; lift: number }
 
 type Point = { x: number; z: number }
 
@@ -60,7 +60,7 @@ export class Journey {
     return [0, 1, 2].map((index) => {
       const { point, heading } = this.findPointBehind(index * carSpacing)
       const piece = this.railway.findPieceAt({ x: Math.floor(point.x), z: Math.floor(point.z) })
-      return { ...point, heading, hidden: piece?.kind === 'tunnel' }
+      return { ...point, heading, hidden: piece?.kind === 'tunnel', lift: liftOver(piece, point, heading) }
     })
   }
 
@@ -177,8 +177,18 @@ export class Journey {
   }
 }
 
+export const bridgeRise = 0.5
 const speed = 1.5
 const carSpacing = 0.8
+
+function liftOver(piece: Piece | undefined, point: Point, heading: number) {
+  if (piece?.kind !== 'bridge') return 0
+  const alongTheBridge =
+    piece.axis === 'horizontal' ? Math.abs(Math.cos(heading)) > 0.7 : Math.abs(Math.sin(heading)) > 0.7
+  if (!alongTheBridge) return 0
+  const across = piece.axis === 'horizontal' ? point.x - Math.floor(point.x) : point.z - Math.floor(point.z)
+  return (bridgeRise * (1 - Math.cos(2 * Math.PI * across))) / 2
+}
 
 function lengthOf({ enter, exit, isEnd }: Traversal) {
   if (isEnd) return 0.5

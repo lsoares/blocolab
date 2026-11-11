@@ -170,6 +170,50 @@ describe('The train on its way', () => {
   })
 })
 
+describe('The train on a bridge', () => {
+  test('the train rises to the top of the bridge', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['.t.', 'MBt', '.t.'])
+    const journey = new Journey(railway)
+
+    journey.advance(0.67)
+
+    assert.ok((journey.listCars()[0]?.lift ?? 0) > 0.4)
+  })
+
+  test('the train does not rise while passing under the bridge', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['.M.', 'tBt', '.t.'])
+    const journey = new Journey(railway)
+
+    journey.advance(0.67)
+
+    assert.equal(journey.listCars()[0]?.lift, 0)
+  })
+
+  test('the train is level again after the bridge', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MBttt'])
+    const journey = new Journey(railway)
+
+    journey.advance(3)
+
+    assert.equal(journey.listCars()[0]?.lift, 0)
+  })
+
+  test('points send the train down the branch', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MPt', '.t.'])
+    railway.turnPointsAt({ x: 1, z: 0 })
+    railway.turnPointsAt({ x: 1, z: 0 })
+    const journey = new Journey(railway)
+
+    journey.advance(10)
+
+    assert.ok(Math.abs((journey.listCars()[0]?.z ?? 0) - 1.5) < 0.05)
+  })
+})
+
 function draw(railway: Railway, rows: string[]) {
   let train: { x: number; z: number } | undefined
   rows.forEach((row, z) => {
@@ -187,6 +231,8 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 't' || symbol === 'M') return { kind: 'track', spot }
   if (symbol === 'E') return { kind: 'station', spot, axis: 'horizontal' }
   if (symbol === 'U') return { kind: 'tunnel', spot, axis: 'horizontal' }
+  if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
+  if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }
   return undefined
 }
