@@ -78,13 +78,15 @@ o rato. Um alternador no topo da barra muda de jogo (cada jogo tem a sua página
   pontes, e o comboio nunca a atravessa (o carril acaba na margem). Com uma ponte por cima, a
   água passa por baixo.
 - **Barreira** (passagem de nível): carril com uma estrada a cruzá-lo; as cancelas fecham sozinhas
-  quando o comboio se aproxima, com luz vermelha a piscar, e abrem depois de ele passar.
+  quando o comboio se aproxima, com luz vermelha a piscar, e abrem depois de ele passar. Na estrada
+  andam carros nos dois sentidos: param antes da cancela fechada, seguem quando abre, e voltam
+  passado um bocado.
 - 14 desafios: andar, dar a volta, estação, túnel, semáforo vermelho, volta com semáforo verde,
   ponte, por cima e por baixo da ponte, atravessar um rio, passagem de nível, agulha, desviar
   com a agulha, oito (cruzamento nos dois sentidos) e árvores ao lado da linha.
 - A barra de peças passa a duas colunas quando o jogo tem mais de 8 peças. O seletor de jogo
   vive numa barra de topo própria (nome da aplicação e separadores), afastado das peças.
-- Ideias a seguir: carros na estrada que param com as cancelas fechadas, vários comboios, carga
+- Ideias a seguir: carros que tocam a buzina, vários comboios, carga
   que se deixa na estação, passageiros, mais carruagens, apitos, estações com nome, comboios a
   não chocarem, cheias do rio e pontes de madeira que se partem.
 
