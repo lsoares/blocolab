@@ -9,8 +9,8 @@ export function isRailPiece(piece: Piece) {
   return piece.kind !== 'tree' && !isStream(piece)
 }
 
-function isStream(piece: Piece): piece is Extract<Piece, { kind: 'river' | 'lava' }> {
-  return piece.kind === 'river' || piece.kind === 'lava'
+export function isStream(piece: Piece): piece is Extract<Piece, { kind: 'river' | 'lava' | 'road' }> {
+  return piece.kind === 'river' || piece.kind === 'lava' || piece.kind === 'road'
 }
 
 export function terminalSidesOf(piece: Piece): Side[] {
@@ -45,6 +45,32 @@ export function turnToMeetNeighbours(pieces: Piece[]): Piece[] {
     turned = turned.map((piece) => turnIfNothingMeetsIt(piece, pieceAt))
   }
   return turned
+}
+
+export function bridgeCrossings(pieces: Piece[]): Piece[] {
+  const pieceAt = indexBySpot(pieces)
+  return pieces.map((piece) => {
+    if (piece.kind === 'track') {
+      const axis = findCrossedAxis(pieceAt, piece.spot)
+      return axis ? { kind: 'bridge', spot: piece.spot, axis } : piece
+    }
+    if (piece.kind === 'bridge' && !hasSomethingAcross(pieceAt, piece)) return { kind: 'track', spot: piece.spot }
+    return piece
+  })
+}
+
+export function alignMountains(pieces: Piece[]): Piece[] {
+  const pieceAt = indexBySpot(pieces)
+  const axisAt = new Map<string, Axis>()
+  for (const piece of pieces) {
+    if (piece.kind !== 'mountain' || axisAt.has(keyOf(piece.spot))) continue
+    const range = collectMountainRange(pieceAt, piece)
+    const axis = chooseMountainAxis(pieceAt, range) ?? piece.axis
+    for (const { spot } of range) axisAt.set(keyOf(spot), axis)
+  }
+  return pieces.map((piece) =>
+    piece.kind === 'mountain' ? { ...piece, axis: axisAt.get(keyOf(piece.spot)) ?? piece.axis } : piece,
+  )
 }
 
 export function aimPoints(pieces: Piece[]): Piece[] {
@@ -135,6 +161,7 @@ function linkedSidesOf(pieceAt: Map<string, Piece>, piece: Piece) {
 
 function turnIfNothingMeetsIt(piece: Piece, pieceAt: Map<string, Piece>): Piece {
   if (piece.kind === 'track' || piece.kind === 'tree' || piece.kind === 'points' || isStream(piece)) return piece
+  if (piece.kind === 'mountain') return piece
   if (piece.kind === 'bridge') return turnBridgeToItsLine(piece, pieceAt)
   const turned = { ...piece, axis: piece.axis === 'horizontal' ? 'vertical' : 'horizontal' } as Piece
   return linkedSidesOf(pieceAt, piece).length === 0 && linkedSidesOf(pieceAt, turned).length > 0 ? turned : piece
@@ -156,6 +183,64 @@ function indexBySpot(pieces: Piece[]) {
 
 function keyOf({ x, z }: Spot) {
   return `${x},${z},`
+}
+
+function collectMountainRange(pieceAt: Map<string, Piece>, first: Extract<Piece, { kind: 'mountain' }>) {
+  const range = [first]
+  const seen = new Set([keyOf(first.spot)])
+  for (let index = 0; index < range.length; index++) {
+    for (const side of ['north', 'east', 'south', 'west'] as const) {
+      const next = pieceAt.get(keyOf(stepFrom(range[index].spot, side)))
+      if (next?.kind !== 'mountain' || seen.has(keyOf(next.spot))) continue
+      seen.add(keyOf(next.spot))
+      range.push(next)
+    }
+  }
+  return range
+}
+
+function chooseMountainAxis(pieceAt: Map<string, Piece>, range: Piece[]): Axis | undefined {
+  const entrances = { horizontal: 0, vertical: 0 }
+  for (const { spot } of range) {
+    for (const side of ['north', 'east', 'south', 'west'] as const) {
+      const outside = pieceAt.get(keyOf(stepFrom(spot, side)))
+      if (!outside || outside.kind === 'mountain' || !isRailPiece(outside)) continue
+      if (!terminalSidesOf(outside).includes(opposite[side]) || isRunningAlongside(pieceAt, outside, side)) continue
+      entrances[side === 'east' || side === 'west' ? 'horizontal' : 'vertical']++
+    }
+  }
+  if (entrances.horizontal > 0 && entrances.vertical === 0) return 'horizontal'
+  if (entrances.vertical > 0 && entrances.horizontal === 0) return 'vertical'
+  return undefined
+}
+
+function isRunningAlongside(pieceAt: Map<string, Piece>, line: Piece, towardMountain: Side) {
+  const alongside: Side[] =
+    towardMountain === 'east' || towardMountain === 'west' ? ['north', 'south'] : ['east', 'west']
+  return alongside.some((side) => {
+    const next = pieceAt.get(keyOf(stepFrom(line.spot, side)))
+    return next !== undefined && isRailPiece(next)
+  })
+}
+
+function findCrossedAxis(pieceAt: Map<string, Piece>, spot: Spot): Axis | undefined {
+  const streamBetween = (a: Side, b: Side) => {
+    const first = pieceAt.get(keyOf(stepFrom(spot, a)))
+    const second = pieceAt.get(keyOf(stepFrom(spot, b)))
+    return first !== undefined && second !== undefined && isStream(first) && first.kind === second.kind
+  }
+  const flowsAlongX = streamBetween('west', 'east')
+  const flowsAlongZ = streamBetween('north', 'south')
+  if (flowsAlongX === flowsAlongZ) return undefined
+  return flowsAlongX ? 'vertical' : 'horizontal'
+}
+
+function hasSomethingAcross(pieceAt: Map<string, Piece>, bridge: Extract<Piece, { kind: 'bridge' }>) {
+  const across: Side[] = bridge.axis === 'horizontal' ? ['north', 'south'] : ['west', 'east']
+  return across.some((side) => {
+    const next = pieceAt.get(keyOf(stepFrom(bridge.spot, side)))
+    return next !== undefined && (isStream(next) || isRailPiece(next))
+  })
 }
 
 function isStationAlong(piece: Piece | undefined, axis: Axis) {

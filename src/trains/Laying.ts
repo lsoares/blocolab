@@ -1,4 +1,5 @@
 import type { Axis, BoardSize, Spot } from '../stage/Grid.ts'
+import { isStream } from './Rails.ts'
 import type { Piece, Railway } from './Railway.ts'
 import type { RailwayView } from './RailwayView.ts'
 
@@ -10,7 +11,7 @@ export class Laying {
   private gestureStart: Spot = { x: 0, z: 0 }
   private laidUpTo: Spot = { x: 0, z: 0 }
   private trackStarted = false
-  private laidKind: 'track' | 'river' | 'lava' = 'track'
+  private laidKind: 'track' | 'river' | 'lava' | 'road' = 'track'
   private cursor: Spot
   private cursorAxis: Axis = 'horizontal'
   private readonly railway: Railway
@@ -91,7 +92,7 @@ export class Laying {
   }
 
   private startLaying(spot: Spot) {
-    this.laidKind = this.tool === 'river' || this.tool === 'lava' ? this.tool : 'track'
+    this.laidKind = this.tool === 'river' || this.tool === 'lava' || this.tool === 'road' ? this.tool : 'track'
     this.gesture = 'laying'
     this.laidUpTo = spot
     this.trackStarted = false
@@ -105,11 +106,17 @@ export class Laying {
       ? pathBetween(this.laidUpTo, spot)
       : [this.laidUpTo, ...pathBetween(this.laidUpTo, spot)]
     for (const cell of cells) {
-      if (this.railway.hasRoomFor(cell)) this.railway.placePiece({ kind: this.laidKind, spot: cell })
+      if (this.canLayOn(cell)) this.railway.placePiece({ kind: this.laidKind, spot: cell })
     }
     this.trackStarted = true
     this.laidUpTo = spot
     this.onRailwayChanged()
+  }
+
+  private canLayOn(cell: Spot) {
+    if (this.railway.hasRoomFor(cell)) return true
+    const there = this.railway.findPieceAt(cell)
+    return this.laidKind === 'track' && there !== undefined && isStream(there)
   }
 
   private startErasing(spot: Spot) {
@@ -208,9 +215,10 @@ const arrowSteps: Record<string, { dx: number; dz: number }> = {
 }
 
 function buildPiece(tool: Tool, spot: Spot, axis: Axis): Piece | undefined {
-  if (tool === 'track' || tool === 'tree' || tool === 'river' || tool === 'lava') return { kind: tool, spot }
+  if (tool === 'track' || tool === 'tree' || tool === 'river' || tool === 'lava' || tool === 'road')
+    return { kind: tool, spot }
   if (tool === 'signal') return { kind: tool, spot, axis, go: false }
-  if (tool === 'station' || tool === 'mountain' || tool === 'bridge' || tool === 'barrier') {
+  if (tool === 'station' || tool === 'mountain') {
     return { kind: tool, spot, axis }
   }
   if (tool === 'points') return { kind: tool, spot, side: 'east' }
@@ -218,7 +226,7 @@ function buildPiece(tool: Tool, spot: Spot, axis: Axis): Piece | undefined {
 }
 
 function isDraggedOut(tool: Tool) {
-  return tool === 'track' || tool === 'river' || tool === 'lava'
+  return tool === 'track' || tool === 'river' || tool === 'lava' || tool === 'road'
 }
 
 function buildPieces(tool: Tool, spot: Spot, axis: Axis, size: BoardSize): Piece[] {

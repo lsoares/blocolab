@@ -161,17 +161,6 @@ test('undo takes back a whole dragged track', async ({ page }) => {
   await expect(game.getStatus()).toHaveText('0 peças')
 })
 
-test('placing a bridge says it is a bridge', async ({ page }) => {
-  const game = new GamePage(page)
-  await game.open('comboio')
-  await game.choosePiece('Ponte')
-  await game.getBoard().click()
-
-  await game.hoverBoard()
-
-  await expect(game.getPieceName()).toHaveText('Ponte')
-})
-
 test('placing points says where they point', async ({ page }) => {
   const game = new GamePage(page)
   await game.open('comboio')
@@ -181,14 +170,6 @@ test('placing points says where they point', async ({ page }) => {
   await game.hoverBoard()
 
   await expect(game.getPieceName()).toHaveText(/^Agulha \(para /)
-})
-
-test('the train game offers the bridge and the points', async ({ page }) => {
-  const game = new GamePage(page)
-
-  await game.open('comboio')
-
-  await expect(page.getByRole('radio', { name: 'Agulha' })).toBeVisible()
 })
 
 test('a river appears while it is still being dragged', async ({ page }) => {
@@ -215,21 +196,69 @@ test('a river says what it is', async ({ page }) => {
   await expect(game.getPieceName()).toHaveText('Rio')
 })
 
-test('placing a barrier says it is a barrier', async ({ page }) => {
+test('a track dragged across a river makes a bridge by itself', async ({ page }) => {
   const game = new GamePage(page)
   await game.open('comboio')
-  await game.choosePiece('Barreira')
-  await game.getBoard().click()
+  await game.choosePiece('Rio')
+  await game.pressBoardAt(0, -60)
+  await game.dragBoardTo(0, 60)
+  await game.releaseBoard()
+  await game.choosePiece('Carril')
+  await game.pressBoardAt(-100, 0)
+  await game.dragBoardTo(100, 0)
+  await game.releaseBoard()
 
   await game.hoverBoard()
 
-  await expect(game.getPieceName()).toHaveText('Barreira')
+  await expect(game.getPieceName()).toHaveText('Ponte')
 })
 
-test('the train game offers the river and the barrier', async ({ page }) => {
+test('a track dragged across lava makes a bridge by itself', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Lava')
+  await game.pressBoardAt(0, -60)
+  await game.dragBoardTo(0, 60)
+  await game.releaseBoard()
+  await game.choosePiece('Carril')
+  await game.pressBoardAt(-100, 0)
+  await game.dragBoardTo(100, 0)
+  await game.releaseBoard()
+
+  await game.hoverBoard()
+
+  await expect(game.getPieceName()).toHaveText('Ponte')
+})
+
+test('a road dragged across a track makes a bridge by itself', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Carril')
+  await game.pressBoardAt(-100, 0)
+  await game.dragBoardTo(100, 0)
+  await game.releaseBoard()
+  await game.choosePiece('Estrada')
+  await game.pressBoardAt(0, -60)
+  await game.dragBoardTo(0, 60)
+  await game.releaseBoard()
+
+  await game.hoverBoard()
+
+  await expect(game.getPieceName()).toHaveText('Ponte')
+})
+
+test('the train game offers the road and the lava', async ({ page }) => {
   const game = new GamePage(page)
 
   await game.open('comboio')
 
-  await expect(page.getByRole('radio', { name: 'Barreira' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Estrada' })).toBeVisible()
+})
+
+test('the manual bridge is gone', async ({ page }) => {
+  const game = new GamePage(page)
+
+  await game.open('comboio')
+
+  await expect(page.getByRole('radio', { name: 'Ponte' })).toHaveCount(0)
 })

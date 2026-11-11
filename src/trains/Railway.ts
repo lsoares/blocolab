@@ -1,6 +1,8 @@
 import type { Axis, BoardSize, Side, Spot } from '../stage/Grid.ts'
 import {
   aimPoints,
+  alignMountains,
+  bridgeCrossings,
   findLinkedSides,
   findWaterSides,
   isRailPiece,
@@ -13,13 +15,13 @@ export type Piece =
   | { kind: 'track'; spot: Spot }
   | { kind: 'station'; spot: Spot; axis: Axis }
   | { kind: 'mountain'; spot: Spot; axis: Axis }
-  | { kind: 'barrier'; spot: Spot; axis: Axis }
   | { kind: 'bridge'; spot: Spot; axis: Axis }
   | { kind: 'points'; spot: Spot; side: Side }
   | { kind: 'signal'; spot: Spot; axis: Axis; go: boolean }
   | { kind: 'tree'; spot: Spot }
   | { kind: 'river'; spot: Spot }
   | { kind: 'lava'; spot: Spot }
+  | { kind: 'road'; spot: Spot }
 
 export class Railway {
   readonly size: BoardSize
@@ -154,7 +156,7 @@ export class Railway {
   private change(changes: { pieces?: Piece[]; train?: Spot | null }) {
     if (this.stroke !== 'changed') this.undoable.push({ pieces: this.pieces, train: this.train })
     if (this.stroke === 'unchanged') this.stroke = 'changed'
-    this.pieces = aimPoints(turnToMeetNeighbours(changes.pieces ?? this.pieces))
+    this.pieces = aimPoints(turnToMeetNeighbours(alignMountains(bridgeCrossings(changes.pieces ?? this.pieces))))
     const train = changes.train === undefined ? this.train : (changes.train ?? undefined)
     this.train = train && this.isRailAt(train) ? train : undefined
   }
@@ -165,9 +167,9 @@ function isPiece(value: unknown): value is Piece {
   if (typeof piece !== 'object' || piece === null) return false
   const spot = piece.spot as Partial<Spot> | undefined
   if (typeof spot?.x !== 'number' || typeof spot.z !== 'number') return false
-  if (['track', 'tree', 'river', 'lava'].includes(piece.kind as string)) return true
+  if (['track', 'tree', 'river', 'lava', 'road'].includes(piece.kind as string)) return true
   if (piece.kind === 'points') return typeof piece.side === 'string'
-  const alongAnAxis = ['station', 'mountain', 'barrier', 'bridge', 'signal']
+  const alongAnAxis = ['station', 'mountain', 'bridge', 'signal']
   return alongAnAxis.includes(piece.kind as string) && (piece.axis === 'horizontal' || piece.axis === 'vertical')
 }
 

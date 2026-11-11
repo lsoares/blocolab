@@ -315,6 +315,7 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
   if (symbol === 'w') return { kind: 'river', spot }
   if (symbol === 'l') return { kind: 'lava', spot }
+  if (symbol === 'r') return { kind: 'road', spot }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }
   return undefined

@@ -42,14 +42,9 @@ export const trains: Game = {
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 12c3-6 6 6 11 0s8 6 11 0" fill="none" stroke="#ff7a1a" stroke-width="4.5" stroke-linecap="round" /><circle cx="6" cy="6" r="1.4" fill="#ffb020" /><circle cx="17" cy="18" r="1.2" fill="#ffb020" /></svg>`,
     },
     {
-      value: 'bridge',
-      name: 'Ponte',
-      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 19h4Q12 3 19 19h4" fill="none" stroke="var(--wood)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" /><path d="M1 21.5h22" stroke="var(--rail)" stroke-width="1.5" /></svg>`,
-    },
-    {
-      value: 'barrier',
-      name: 'Barreira',
-      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="2" y="18" width="20" height="3" fill="var(--rail)" /><rect x="3" y="9" width="3.5" height="10" fill="var(--rail-dark)" /><path d="M6 10 22 5" stroke="var(--train)" stroke-width="3.2" stroke-linecap="round" /><circle cx="4.7" cy="6.5" r="2.2" fill="var(--signal-red)" /></svg>`,
+      value: 'road',
+      name: 'Estrada',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="1" y="7" width="22" height="10" rx="1.5" fill="#4b4f57" /><path d="M2 12h4M10 12h4M18 12h4" stroke="#f2d04a" stroke-width="1.6" stroke-linecap="round" /></svg>`,
     },
     {
       value: 'points',
@@ -149,7 +144,7 @@ function nameOf(piece: Piece) {
     mountain: 'Montanha',
     lava: 'Lava',
     bridge: 'Ponte',
-    barrier: 'Barreira',
+    road: 'Estrada',
     river: 'Rio',
     signal: `Semáforo (${piece.kind === 'signal' && piece.go ? 'verde' : 'vermelho'})`,
     tree: 'Árvore',

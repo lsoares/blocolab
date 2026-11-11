@@ -103,56 +103,68 @@ describe('Pieces turning by themselves', () => {
 })
 
 describe('Bridges', () => {
-  test('a bridge turns to the line that meets it', () => {
+  test('a track between two rivers becomes a bridge', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
-    railway.placePiece({ kind: 'bridge', spot: { x: 1, z: 1 }, axis: 'horizontal' })
 
-    railway.placePiece({ kind: 'track', spot: { x: 1, z: 0 } })
+    draw(railway, ['.w.', 'ttt', '.w.'])
 
-    assert.deepEqual(railway.findPieceAt({ x: 1, z: 1 }), { kind: 'bridge', spot: { x: 1, z: 1 }, axis: 'vertical' })
+    assert.equal(railway.findPieceAt({ x: 1, z: 1 })?.kind, 'bridge')
   })
 
-  test('a bridge that already meets a track keeps its way', () => {
+  test('a track between two roads becomes a bridge', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
-    draw(railway, ['tBt'])
+
+    draw(railway, ['.r.', 'ttt', '.r.'])
+
+    assert.equal(railway.findPieceAt({ x: 1, z: 1 })?.kind, 'bridge')
+  })
+
+  test('a bridge runs along the track, across the stream', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+
+    draw(railway, ['.l.', 'ttt', '.l.'])
+
+    assert.deepEqual(railway.findPieceAt({ x: 1, z: 1 }), { kind: 'bridge', spot: { x: 1, z: 1 }, axis: 'horizontal' })
+  })
+
+  test('a track beside a single river stays a track', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+
+    draw(railway, ['.w.', 'ttt', '...'])
+
+    assert.equal(railway.findPieceAt({ x: 1, z: 1 })?.kind, 'track')
+  })
+
+  test('a bridge goes back to a track when the river is taken away', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w.', 'ttt', '.w.'])
+
+    railway.eraseAt({ x: 1, z: 0 })
+    railway.eraseAt({ x: 1, z: 2 })
+
+    assert.equal(railway.findPieceAt({ x: 1, z: 1 })?.kind, 'track')
+  })
+
+  test('a track laid across a river makes a bridge where they meet', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w.', '.w.', '.w.'])
 
     railway.placePiece({ kind: 'track', spot: { x: 1, z: 1 } })
 
-    assert.deepEqual(railway.findPieceAt({ x: 1, z: 0 }), { kind: 'bridge', spot: { x: 1, z: 0 }, axis: 'horizontal' })
-  })
-
-  test('a bridge links to the tracks on every side', () => {
-    const railway = new Railway({ columns: 8, rows: 6 })
-    draw(railway, ['tBt', '.t.'])
-
-    const sides = railway.listLinkedSides({ x: 1, z: 0 })
-
-    assert.deepEqual(sides, ['east', 'south', 'west'])
+    assert.equal(railway.findPieceAt({ x: 1, z: 1 })?.kind, 'bridge')
   })
 
   test('a train goes straight over a bridge instead of turning', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
-    draw(railway, ['MBt', '.t.'])
+    draw(railway, ['.w.', 'Mtt', '.w.'])
 
     const visited = railway.planRoute()?.visits.map(({ spot }) => [spot.x, spot.z])
 
     assert.deepEqual(visited, [
-      [0, 0],
-      [1, 0],
-      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
     ])
-  })
-
-  test('a train passes the bridge over and under on a figure of eight', () => {
-    const railway = new Railway({ columns: 8, rows: 6 })
-    draw(railway, ['ttt..', 't.t..', 'MtBtt', '..t.t', '..ttt'])
-
-    const entries = railway
-      .planRoute()
-      ?.visits.filter(({ spot }) => spot.x === 2 && spot.z === 2)
-      .map(({ enter }) => enter)
-
-    assert.deepEqual(entries, ['west', 'south'])
   })
 })
 
@@ -318,23 +330,58 @@ describe('Rivers', () => {
   })
 })
 
-describe('Barriers', () => {
-  test('a barrier turns to meet the track beside it', () => {
+describe('Roads', () => {
+  test('a road links to the road beside it', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
-    railway.placePiece({ kind: 'barrier', spot: { x: 1, z: 1 }, axis: 'vertical' })
 
-    railway.placePiece({ kind: 'track', spot: { x: 2, z: 1 } })
+    draw(railway, ['rr'])
 
-    assert.deepEqual(railway.findPieceAt({ x: 1, z: 1 }), { kind: 'barrier', spot: { x: 1, z: 1 }, axis: 'horizontal' })
+    assert.deepEqual(railway.listWaterSides({ x: 0, z: 0 }), ['east'])
   })
 
-  test('a train passes through a barrier on its way', () => {
+  test('the train cannot stand on a road', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
-    draw(railway, ['MtXtt'])
+    railway.placePiece({ kind: 'road', spot: { x: 1, z: 1 } })
 
-    const visited = railway.planRoute()?.visits.some(({ spot }) => spot.x === 2)
+    railway.placeTrain({ x: 1, z: 1 })
 
-    assert.equal(visited, true)
+    assert.equal(railway.findTrainSpot(), undefined)
+  })
+})
+
+describe('Mountains', () => {
+  test('a mountain turns to the line that meets it', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    railway.placePiece({ kind: 'mountain', spot: { x: 1, z: 2 }, axis: 'horizontal' })
+
+    railway.placePiece({ kind: 'track', spot: { x: 1, z: 1 } })
+    railway.placePiece({ kind: 'track', spot: { x: 1, z: 0 } })
+
+    assert.deepEqual(railway.findPieceAt({ x: 1, z: 2 }), { kind: 'mountain', spot: { x: 1, z: 2 }, axis: 'vertical' })
+  })
+
+  test('every cell of a mountain lines up with the track that reaches it', () => {
+    const railway = new Railway({ columns: 10, rows: 8 })
+    for (const x of [3, 4, 5])
+      for (const z of [3, 4, 5]) railway.placePiece({ kind: 'mountain', spot: { x, z }, axis: 'horizontal' })
+
+    for (const z of [0, 1, 2]) railway.placePiece({ kind: 'track', spot: { x: 4, z } })
+
+    const axes = railway.listPieces().flatMap((piece) => (piece.kind === 'mountain' ? [piece.axis] : []))
+    assert.deepEqual(new Set(axes), new Set(['vertical']))
+  })
+
+  test('a track running past a mountain does not turn it', () => {
+    const railway = new Railway({ columns: 10, rows: 8 })
+    railway.placePiece({ kind: 'mountain', spot: { x: 4, z: 4 }, axis: 'horizontal' })
+
+    for (const x of [3, 4, 5]) railway.placePiece({ kind: 'track', spot: { x, z: 3 } })
+
+    assert.deepEqual(railway.findPieceAt({ x: 4, z: 4 }), {
+      kind: 'mountain',
+      spot: { x: 4, z: 4 },
+      axis: 'horizontal',
+    })
   })
 })
 
@@ -518,7 +565,7 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 'a') return { kind: 'tree', spot }
   if (symbol === 'w') return { kind: 'river', spot }
   if (symbol === 'l') return { kind: 'lava', spot }
-  if (symbol.toLowerCase() === 'x') return { kind: 'barrier', spot, axis }
+  if (symbol === 'r') return { kind: 'road', spot }
   if (symbol === 'B' || symbol === 'b') return { kind: 'bridge', spot, axis }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol.toLowerCase() === 'e') return { kind: 'station', spot, axis }

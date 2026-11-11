@@ -28,11 +28,14 @@ export const challenges: Challenge[] = [
     goal: 'Faz o comboio passar por uma ponte.',
     isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'bridge'),
   },
-  { goal: 'Faz o comboio passar por cima e por baixo da ponte.', isMet: passesABridgeOverAndUnder },
+  {
+    goal: 'Faz o comboio passar por cima de uma estrada.',
+    isMet: (railway) => crossesAStream(railway, 'road'),
+  },
   { goal: 'Faz o comboio atravessar um rio por uma ponte.', isMet: (railway) => crossesAStream(railway, 'river') },
   {
-    goal: 'Faz o comboio passar por uma passagem de nível.',
-    isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'barrier'),
+    goal: 'Faz uma estrada com cinco casas.',
+    isMet: (railway) => railway.listPieces().filter((piece) => piece.kind === 'road').length >= 5,
   },
   {
     goal: 'Põe uma agulha no caminho do comboio.',
@@ -51,20 +54,7 @@ function visitedPieces(railway: Railway): Piece[] {
   return (railway.planRoute()?.visits ?? []).flatMap(({ spot }) => railway.findPieceAt(spot) ?? [])
 }
 
-function passesABridgeOverAndUnder(railway: Railway) {
-  const visits = railway.planRoute()?.visits ?? []
-  return visits.some(({ spot }) => {
-    const bridge = railway.findPieceAt(spot)
-    if (bridge?.kind !== 'bridge') return false
-    const along = bridge.axis === 'horizontal' ? ['west', 'east'] : ['north', 'south']
-    const entries = visits
-      .filter((other) => other.spot.x === spot.x && other.spot.z === spot.z)
-      .map(({ enter }) => enter)
-    return entries.some((enter) => along.includes(enter)) && entries.some((enter) => !along.includes(enter))
-  })
-}
-
-function crossesAStream(railway: Railway, kind: 'river' | 'lava') {
+function crossesAStream(railway: Railway, kind: 'river' | 'lava' | 'road') {
   return visitedPieces(railway).some((piece) => {
     if (piece.kind !== 'bridge') return false
     const across = piece.axis === 'horizontal' ? (['north', 'south'] as const) : (['west', 'east'] as const)
