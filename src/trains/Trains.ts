@@ -5,6 +5,7 @@ import { Journey } from './Journey.ts'
 import { Laying, type Tool } from './Laying.ts'
 import { type Piece, Railway } from './Railway.ts'
 import { RailwayView } from './RailwayView.ts'
+import { TrainSound } from './TrainSound.ts'
 
 export const trains: Game = {
   id: 'comboio',
@@ -81,9 +82,13 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
   view.show(railway)
   let lastSeconds = 0
   let signalsSeen = 0
+  const sound = new TrainSound()
+  document.addEventListener('visibilitychange', () => document.hidden && sound.silence())
   view.start((seconds) => {
     const delta = Math.min(seconds - lastSeconds, 0.1)
     journey.advance(delta)
+    if (journey.isMoving()) sound.play()
+    else sound.silence()
     if (railway.countSignalChanges() !== signalsSeen) {
       signalsSeen = railway.countSignalChanges()
       view.show(railway)

@@ -1,6 +1,7 @@
 :root {
   --table: #e4eaf0;
   --panel: #ffffffd9;
+  --panel-solid: #ffffff;
   --control: #eef4f8;
   --control-chosen: #d8eaff;
   --accent: #1a6fd6;
@@ -46,6 +47,7 @@
   :root {
     --table: #12212f;
     --panel: #1b2836e6;
+    --panel-solid: #1b2836;
     --control: #273647;
     --control-chosen: #1f4470;
     --accent: #7db8ff;
@@ -391,5 +393,53 @@ main {
         outline: 3px solid var(--accent);
       }
     }
+  }
+}
+
+.confirm {
+  max-width: 22rem;
+  padding: calc(var(--space) * 2.5);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--panel-solid);
+  box-shadow: 0 8px 32px var(--shadow);
+
+  &::backdrop {
+    background: #0006;
+  }
+
+  p {
+    margin: 0 0 calc(var(--space) * 2);
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  .choices {
+    display: flex;
+    gap: var(--space);
+    justify-content: flex-end;
+  }
+
+  button {
+    min-height: 2.75rem;
+    padding: 0 calc(var(--space) * 2);
+    font: inherit;
+    font-weight: 700;
+    color: var(--text);
+    border: none;
+    border-radius: var(--radius);
+    background: var(--control);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  .danger {
+    color: white;
+    background: var(--switch);
   }
 }

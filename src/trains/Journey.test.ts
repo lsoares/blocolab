@@ -58,6 +58,38 @@ describe('The train on its way', () => {
     assert.ok(Math.abs((journey.listCars()[0]?.x ?? 0) - 2.5) < 0.1)
   })
 
+  test('the train is moving while it rolls', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['Mtttt'])
+    const journey = new Journey(railway)
+
+    journey.advance(0.5)
+
+    assert.equal(journey.isMoving(), true)
+  })
+
+  test('the train is not moving while it waits at a station', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtEtt'])
+    const journey = new Journey(railway)
+    journey.advance(1.4)
+
+    journey.advance(1.0)
+
+    assert.equal(journey.isMoving(), false)
+  })
+
+  test('the train is not moving while it waits at a red signal', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['MtRtt'])
+    const journey = new Journey(railway)
+    journey.advance(1.2)
+
+    journey.advance(1.0)
+
+    assert.equal(journey.isMoving(), false)
+  })
+
   test('a long platform keeps the train waiting in its middle', () => {
     const railway = new Railway({ columns: 10, rows: 6 })
     draw(railway, ['MtEEEtt'])

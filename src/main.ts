@@ -89,6 +89,13 @@ function startGame(chosen: Game, canvas: HTMLCanvasElement) {
     canvas.focus()
   })
   undoButton?.addEventListener('click', () => started.undo())
+  const confirmation = document.querySelector<HTMLDialogElement>('.confirm')
+  document.querySelector('.reset')?.addEventListener('click', () => confirmation?.showModal())
+  confirmation?.addEventListener('close', () => {
+    if (confirmation.returnValue !== 'erase') return
+    started.startOver()
+    canvas.focus()
+  })
   document.addEventListener('keydown', (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return
     event.preventDefault()

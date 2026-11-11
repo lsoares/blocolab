@@ -24,6 +24,7 @@
             <span class="visually-hidden">Borracha</span>
           </label>
           <button type="button" class="undo" aria-label="Desfazer" data-name="Desfazer" disabled>↶</button>
+          <button type="button" class="reset" aria-label="Começar de novo" data-name="Começar de novo">🗑️</button>
         </fieldset>
         <output class="visually-hidden" aria-live="polite">0 peças</output>
       </aside>
@@ -40,6 +41,15 @@
         </p>
       </main>
     </div>
+    <dialog class="confirm" aria-labelledby="confirm-question">
+      <form method="dialog">
+        <p id="confirm-question">Apagar tudo e começar de novo?</p>
+        <div class="choices">
+          <button type="submit" value="keep">Não apagar</button>
+          <button type="submit" value="erase" class="danger">Apagar tudo</button>
+        </div>
+      </form>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

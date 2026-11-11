@@ -12,6 +12,7 @@ export class Journey {
   private alternation = 0
   private waitRemaining = 0
   private signalWait = 0
+  private moving = false
   private releasedSignal?: Spot
   private stationDone = true
   private startedAt?: Spot
@@ -34,6 +35,7 @@ export class Journey {
 
   advance(seconds: number) {
     let time = seconds
+    this.moving = false
     for (let guard = 0; guard < 20000 && time > 1e-9 && this.traversal; guard++) {
       if (this.waitRemaining > 0) {
         const waited = Math.min(time, this.waitRemaining)
@@ -52,6 +54,7 @@ export class Journey {
       }
       const step = Math.min(time * speed, length - this.travelled, 0.05, this.distanceToStationStop(length))
       this.travelled += step
+      this.moving = step > 1e-9
       time -= step / speed
       this.record(pointAlong(this.traversal, this.travelled))
       if (this.isAtStationStop(length)) {
@@ -59,6 +62,10 @@ export class Journey {
         this.waitRemaining = 2
       }
     }
+  }
+
+  isMoving() {
+    return this.moving
   }
 
   listCars(): Car[] {

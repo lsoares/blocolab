@@ -390,15 +390,15 @@ function createTunnelMouth(side: Side) {
     alongX ? [x * along, across] : [across, z * along]
   const frame = (size: number[], height: number, along: number, across: number) => {
     const [px, pz] = place(along, across)
-    return box(alongX ? [size[0], size[1], size[2]] : [size[2], size[1], size[0]], '#c9ced2', [px, height, pz])
+    return box(alongX ? [size[0], size[1], size[2]] : [size[2], size[1], size[0]], '#e2d3ad', [px, height, pz])
   }
   const [hollowX, hollowZ] = place(0.23, 0)
   return [
     ...createArm(side),
-    frame([0.14, 0.2, 0.58], 0.4, 0.27, 0),
-    frame([0.14, 0.3, 0.12], 0.15, 0.27, -0.23),
-    frame([0.14, 0.3, 0.12], 0.15, 0.27, 0.23),
-    box(alongX ? [0.1, 0.28, 0.34] : [0.34, 0.28, 0.1], '#1d1b1a', [hollowX, 0.14, hollowZ]),
+    frame([0.18, 0.22, 0.72], 0.42, 0.29, 0),
+    frame([0.18, 0.34, 0.14], 0.17, 0.29, -0.29),
+    frame([0.18, 0.34, 0.14], 0.17, 0.29, 0.29),
+    box(alongX ? [0.12, 0.3, 0.44] : [0.44, 0.3, 0.12], '#1d1b1a', [hollowX, 0.15, hollowZ]),
   ]
 }
 

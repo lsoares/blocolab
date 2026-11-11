@@ -431,3 +431,15 @@ pedras). Desfazer tira a última carta; Limpar esvazia a fila.
 Cada jogo guarda o tabuleiro no browser (`localStorage`) a cada mudança e recupera-o ao abrir a
 página ou ao voltar de outro jogo; os desafios continuam onde estavam. Não guarda o histórico de
 "desfazer".
+
+## Comboio: estradas, pontes automáticas e som
+
+- A **barreira** e a **ponte** manuais saíram. Há a **estrada** (arrasta-se; tem carros a andar
+  nas duas faixas). Quando uma linha cruza uma estrada, um rio ou lava, a casa do cruzamento
+  vira **ponte sozinha**; se se tirar o que está por baixo, volta a carril.
+- A **montanha** alinha-se com a linha que lhe chega e só abre **uma boca onde a linha entra e
+  outra onde sai** (pórtico em pedra). Uma linha que passa ao lado não a vira.
+- O comboio faz **som** (vapor e rodas na linha) enquanto anda e cala quando pára.
+- Há um botão 🗑️ **Começar de novo**, com confirmação, em todos os jogos.
+- Ideias a seguir: carros que param quando o comboio passa (cruzamento sem ponte), semáforos
+  para os carros, vários comboios, apito ao sair da estação.

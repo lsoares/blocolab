@@ -42,3 +42,27 @@ test('each game keeps its own board', async ({ page }) => {
 
   await expect(game.getStatus()).toHaveText('0 peças')
 })
+
+test('starting over asks first and then clears the board', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open()
+  await game.choosePiece('Fio')
+  await game.placeAtCursor()
+  await page.getByRole('button', { name: 'Começar de novo' }).click()
+
+  await page.getByRole('button', { name: 'Apagar tudo' }).click()
+
+  await expect(game.getStatus()).toHaveText('0 peças')
+})
+
+test('starting over can be called off', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open()
+  await game.choosePiece('Fio')
+  await game.placeAtCursor()
+  await page.getByRole('button', { name: 'Começar de novo' }).click()
+
+  await page.getByRole('button', { name: 'Não apagar' }).click()
+
+  await expect(game.getStatus()).toHaveText('1 peça')
+})
