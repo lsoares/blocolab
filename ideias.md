@@ -74,12 +74,19 @@ o rato. Um alternador no topo da barra muda de jogo (cada jogo tem a sua página
   desce o arco, e quem passa por baixo não sobe. Vira-se sozinha para a linha que a encosta.
 - **Agulha**: numa bifurcação, a seta amarela mostra o lado para onde o comboio vai quando pode
   escolher; toca-se para mudar de ramal (passa pelos lados ligados, um de cada vez).
-- 12 desafios: andar, dar a volta, estação, túnel, semáforo vermelho, volta com semáforo verde,
-  ponte, por cima e por baixo da ponte, agulha, desviar com a agulha, oito (cruzamento nos dois
-  sentidos) e árvores ao lado da linha.
-- Ideias a seguir: barreiras (passagem de nível), rio por baixo da ponte, vários comboios,
-  carga que se deixa na estação, passageiros, mais carruagens, apitos, estações com nome, e
-  comboios a não chocarem.
+- **Rio**: desenha-se a arrastar como o carril, com curvas; a água só se liga a água e a
+  pontes, e o comboio nunca a atravessa (o carril acaba na margem). Com uma ponte por cima, a
+  água passa por baixo.
+- **Barreira** (passagem de nível): carril com uma estrada a cruzá-lo; as cancelas fecham sozinhas
+  quando o comboio se aproxima, com luz vermelha a piscar, e abrem depois de ele passar.
+- 14 desafios: andar, dar a volta, estação, túnel, semáforo vermelho, volta com semáforo verde,
+  ponte, por cima e por baixo da ponte, atravessar um rio, passagem de nível, agulha, desviar
+  com a agulha, oito (cruzamento nos dois sentidos) e árvores ao lado da linha.
+- A barra de peças passa a duas colunas quando o jogo tem mais de 8 peças. O seletor de jogo
+  vive numa barra de topo própria (nome da aplicação e separadores), afastado das peças.
+- Ideias a seguir: carros na estrada que param com as cancelas fechadas, vários comboios, carga
+  que se deixa na estação, passageiros, mais carruagens, apitos, estações com nome, comboios a
+  não chocarem, cheias do rio e pontes de madeira que se partem.
 
 ## Como evoluir este jogo e que outros jogos fazer (2026-11-11)
 
