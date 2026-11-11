@@ -7,7 +7,10 @@ export class IsometricCamera {
   private targetZoom = 1
   private aspect = 1
 
-  constructor(private readonly viewHeight: number) {}
+  constructor(
+    private readonly viewHeight: number,
+    private readonly reducedMotion: MediaQueryList,
+  ) {}
 
   rotateClockwise() {
     this.targetQuarterTurns -= 1
@@ -34,14 +37,14 @@ export class IsometricCamera {
   }
 
   advance(seconds: number) {
-    const easing = 1 - Math.exp(-seconds * 12)
+    const easing = this.reducedMotion.matches ? 1 : 1 - Math.exp(-seconds * 12)
     this.shownQuarterTurns += (this.targetQuarterTurns - this.shownQuarterTurns) * easing
     this.camera.zoom += (this.targetZoom - this.camera.zoom) * easing
     this.placeCamera()
   }
 
   private placeCamera() {
-    const halfHeight = this.viewHeight / 2
+    const halfHeight = Math.max(this.viewHeight / 2, (this.viewHeight * 0.7) / this.aspect)
     Object.assign(this.camera, {
       left: -halfHeight * this.aspect,
       right: halfHeight * this.aspect,

@@ -1,23 +1,42 @@
 <!doctype html>
-<html lang="pt">
+<html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Blocolab</title>
   </head>
   <body>
-    <nav class="toolbar" aria-label="Ferramentas">
-      <button type="button" data-tool="brush" aria-pressed="true" aria-label="Pincel" title="Pincel">🖌️</button>
-      <button type="button" data-tool="eraser" aria-pressed="false" aria-label="Borracha" title="Borracha">🧽</button>
-      <hr />
-      <button type="button" data-camera="rotate-left" aria-label="Rodar para a esquerda" title="Rodar para a esquerda">↺</button>
-      <button type="button" data-camera="rotate-right" aria-label="Rodar para a direita" title="Rodar para a direita">↻</button>
-      <button type="button" data-camera="zoom-in" aria-label="Aproximar" title="Aproximar">➕</button>
-      <button type="button" data-camera="zoom-out" aria-label="Afastar" title="Afastar">➖</button>
+    <aside class="toolbar">
+      <fieldset>
+        <legend class="visually-hidden">Ferramenta</legend>
+        <label title="Pincel">
+          <input type="radio" name="tool" value="brush" checked />
+          <span aria-hidden="true">🖌️</span>
+          <span class="visually-hidden">Pincel</span>
+        </label>
+        <label title="Borracha">
+          <input type="radio" name="tool" value="eraser" />
+          <span aria-hidden="true">🧽</span>
+          <span class="visually-hidden">Borracha</span>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend class="visually-hidden">Câmara</legend>
+        <button type="button" data-camera="rotate-left" aria-label="Rodar para a esquerda" title="Rodar para a esquerda">↺</button>
+        <button type="button" data-camera="rotate-right" aria-label="Rodar para a direita" title="Rodar para a direita">↻</button>
+        <button type="button" data-camera="zoom-in" aria-label="Aproximar" title="Aproximar">+</button>
+        <button type="button" data-camera="zoom-out" aria-label="Afastar" title="Afastar">−</button>
+      </fieldset>
       <output aria-live="polite">0 blocos</output>
-    </nav>
-    <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the world is a keyboard-driven widget, which is what the application role announces -->
-    <canvas id="world" role="application" tabindex="0" aria-label="Mundo"></canvas>
+    </aside>
+    <main>
+      <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the world is a keyboard-driven widget, which is what the application role announces -->
+      <canvas id="world" role="application" tabindex="0" aria-label="Mundo"></canvas>
+      <p class="no-3d" role="alert" hidden>
+        Este browser não consegue mostrar o mundo em 3D. Experimenta numa versão recente do Chrome, Firefox, Safari ou Edge.
+      </p>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

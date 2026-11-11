@@ -1,10 +1,36 @@
+:root {
+  --sky: #bfe6ff;
+  --panel: #ffffffd9;
+  --control: #eef4f8;
+  --control-chosen: #d8eaff;
+  --accent: #1a6fd6;
+  --text: #1d2733;
+  --shadow: #0002;
+  --space: 0.5rem;
+  --radius: 0.875rem;
+  --control-size: 3.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sky: #12212f;
+    --panel: #1b2836e6;
+    --control: #273647;
+    --control-chosen: #1f4470;
+    --accent: #7db8ff;
+    --text: #e8eef5;
+    --shadow: #0008;
+  }
+}
+
 html,
 body {
   margin: 0;
   height: 100%;
   overflow: hidden;
   font-family: system-ui, sans-serif;
-  background: #bfe6ff;
+  color: var(--text);
+  background: var(--sky);
 }
 
 body {
@@ -14,40 +40,110 @@ body {
 .toolbar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 8px;
-  background: #ffffffd9;
-  box-shadow: 2px 0 8px #0002;
+  gap: var(--space);
+  padding: calc(var(--space) * 1.5) var(--space);
+  overflow-y: auto;
+  background: var(--panel);
+  box-shadow: 2px 0 8px var(--shadow);
   z-index: 1;
+
+  fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space);
+    margin: 0;
+    padding: 0 0 var(--space);
+    border: none;
+    border-bottom: 2px solid var(--shadow);
+  }
+
+  label,
+  button {
+    display: grid;
+    place-items: center;
+    width: var(--control-size);
+    height: var(--control-size);
+    box-sizing: border-box;
+    font-size: 1.75rem;
+    color: inherit;
+    border: 3px solid transparent;
+    border-radius: var(--radius);
+    background: var(--control);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  label:has(:checked) {
+    border-color: var(--accent);
+    background: var(--control-chosen);
+    box-shadow: inset 0 0 0 3px var(--accent);
+  }
+
+  label:has(:focus-visible),
+  button:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  label {
+    position: relative;
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  output {
+    text-align: center;
+    font-size: 0.875rem;
+  }
 }
 
-.toolbar button {
-  width: 56px;
-  height: 56px;
-  font-size: 28px;
-  border: 3px solid transparent;
-  border-radius: 14px;
-  background: #eef4f8;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.toolbar button[aria-pressed="true"] {
-  border-color: #2b8cff;
-  background: #d8eaff;
-}
-
-.toolbar hr {
-  width: 100%;
-  border: none;
-  border-top: 2px solid #0001;
+main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 #world {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
   display: block;
+  width: 100%;
+  height: 100%;
   touch-action: none;
   cursor: crosshair;
+
+  &:focus-visible {
+    outline: 4px solid var(--accent);
+    outline-offset: -4px;
+  }
+}
+
+.no-3d {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: 30ch;
+  height: fit-content;
+  padding: calc(var(--space) * 3);
+  font-size: 1.25rem;
+  text-align: center;
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+[hidden] {
+  display: none !important;
 }

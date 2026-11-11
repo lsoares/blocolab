@@ -13,25 +13,24 @@ export class WorldView {
   private readonly board = new THREE.Group()
   private readonly ground: THREE.Mesh
   private readonly cubes: THREE.InstancedMesh
-  private readonly ghost: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
+  private readonly ghost = createGhost()
   private readonly raycaster = new THREE.Raycaster()
   private shownCubes: Position[] = []
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly size: WorldSize,
+    reducedMotion: MediaQueryList,
   ) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     this.renderer.setPixelRatio(window.devicePixelRatio)
     this.renderer.shadowMap.enabled = true
-    this.scene.background = new THREE.Color('#bfe6ff')
-    this.camera = new IsometricCamera(Math.max(size.width, size.depth) * 1.1)
+    this.camera = new IsometricCamera(Math.max(size.width, size.depth) * 1.1, reducedMotion)
 
     this.board.position.set(-size.width / 2, 0, -size.depth / 2)
     this.scene.add(this.board)
     this.ground = createGround(size)
     this.cubes = createCubes(size)
-    this.ghost = createGhost()
     this.board.add(this.ground, createGridLines(size), this.cubes, this.ghost)
     this.scene.add(...createLights(size))
 
@@ -40,9 +39,10 @@ export class WorldView {
   }
 
   start() {
-    const clock = new THREE.Clock()
-    this.renderer.setAnimationLoop(() => {
-      this.camera.advance(clock.getDelta())
+    const timer = new THREE.Timer()
+    this.renderer.setAnimationLoop((timestamp) => {
+      timer.update(timestamp)
+      this.camera.advance(timer.getDelta())
       this.renderer.render(this.scene, this.camera.camera)
     })
   }
@@ -61,11 +61,15 @@ export class WorldView {
   }
 
   showPlacementGhost(position: Position) {
-    this.showGhost(position, '#ffffff')
+    this.ghost.placement.visible = true
+    this.ghost.erasure.visible = false
+    this.moveGhostTo(position)
   }
 
   showErasureGhost(position: Position) {
-    this.showGhost(position, '#ff4d4d')
+    this.ghost.placement.visible = false
+    this.ghost.erasure.visible = true
+    this.moveGhostTo(position)
   }
 
   hideGhost() {
@@ -103,9 +107,8 @@ export class WorldView {
     this.raycaster.setFromCamera(screenPoint, this.camera.camera)
   }
 
-  private showGhost({ x, y, z }: Position, color: string) {
+  private moveGhostTo({ x, y, z }: Position) {
     this.ghost.position.set(x + 0.5, y + 0.5, z + 0.5)
-    this.ghost.material.color.set(color)
     this.ghost.visible = true
   }
 
@@ -145,12 +148,33 @@ function createCubes({ width, height, depth }: WorldSize) {
 }
 
 function createGhost() {
-  const ghost = new THREE.Mesh(
-    new THREE.BoxGeometry(1.02, 1.02, 1.02),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45, depthWrite: false }),
+  const box = new THREE.BoxGeometry(1.02, 1.02, 1.02)
+  const placement = new THREE.Mesh(
+    box,
+    new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.45, depthWrite: false }),
   )
+  const erasure = new THREE.Group().add(
+    new THREE.Mesh(
+      box,
+      new THREE.MeshBasicMaterial({ color: '#ff4d4d', transparent: true, opacity: 0.35, depthWrite: false }),
+    ),
+    new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: '#7a0000' })),
+    createCross(),
+  )
+  const ghost = Object.assign(new THREE.Group().add(placement, erasure), { placement, erasure })
   ghost.visible = false
   return ghost
+}
+
+function createCross() {
+  const top = 0.52
+  return new THREE.LineSegments(
+    new THREE.BufferGeometry().setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute([-0.5, top, -0.5, 0.5, top, 0.5, -0.5, top, 0.5, 0.5, top, -0.5], 3),
+    ),
+    new THREE.LineBasicMaterial({ color: '#7a0000' }),
+  )
 }
 
 function createLights({ width, depth }: WorldSize) {

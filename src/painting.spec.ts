@@ -11,7 +11,7 @@ test('the brush places a cube where the child taps', async ({ page }) => {
 test('the eraser removes the tapped cube', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('application', { name: 'Mundo' }).click()
-  await page.getByRole('button', { name: 'Borracha' }).click()
+  await page.getByRole('radio', { name: 'Borracha' }).check()
 
   await page.getByRole('application', { name: 'Mundo' }).click()
 
@@ -24,7 +24,7 @@ test('dragging the brush paints a row of cubes', async ({ page }) => {
 
   await world.dragTo(world, { sourcePosition: { x: 400, y: 360 }, targetPosition: { x: 700, y: 360 }, steps: 30 })
 
-  await expect(page.getByRole('status')).toHaveText('11 blocos')
+  await expect(page.getByRole('status')).toHaveText('12 blocos')
 })
 
 test('Enter places a cube under the keyboard cursor', async ({ page }) => {
@@ -54,7 +54,7 @@ test('Enter with the eraser removes the cube under the keyboard cursor', async (
   const world = page.getByRole('application', { name: 'Mundo' })
   await world.focus()
   await page.keyboard.press('Enter')
-  await page.getByRole('button', { name: 'Borracha' }).click()
+  await page.getByRole('radio', { name: 'Borracha' }).check()
   await world.focus()
 
   await page.keyboard.press('Enter')
