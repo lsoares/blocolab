@@ -17,6 +17,11 @@ export const trains: Game = {
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="1" y="7" width="22" height="10" rx="1.5" fill="var(--wood)" /><path d="M1 10h22M1 14h22" stroke="var(--rail)" stroke-width="1.6" /></svg>`,
     },
     {
+      value: 'river',
+      name: 'Rio',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 12c3-6 6 6 11 0s8 6 11 0" fill="none" stroke="var(--water)" stroke-width="4.5" stroke-linecap="round" /></svg>`,
+    },
+    {
       value: 'train',
       name: 'Comboio',
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="2" y="10" width="13" height="7" rx="1.5" fill="var(--train)" /><rect x="12" y="6" width="7" height="11" rx="1" fill="var(--train-dark)" /><rect x="4" y="5" width="3" height="5" fill="var(--rail-dark)" /><circle cx="7" cy="18" r="2.2" fill="var(--rail-dark)" /><circle cx="16" cy="18" r="2.2" fill="var(--rail-dark)" /></svg>`,
@@ -35,6 +40,11 @@ export const trains: Game = {
       value: 'bridge',
       name: 'Ponte',
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 19h4Q12 3 19 19h4" fill="none" stroke="var(--wood)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" /><path d="M1 21.5h22" stroke="var(--rail)" stroke-width="1.5" /></svg>`,
+    },
+    {
+      value: 'barrier',
+      name: 'Barreira',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="2" y="18" width="20" height="3" fill="var(--rail)" /><rect x="3" y="9" width="3.5" height="10" fill="var(--rail-dark)" /><path d="M6 10 22 5" stroke="var(--train)" stroke-width="3.2" stroke-linecap="round" /><circle cx="4.7" cy="6.5" r="2.2" fill="var(--signal-red)" /></svg>`,
     },
     {
       value: 'points',
@@ -63,7 +73,7 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
   const show = () => {
     journey.sync()
     view.show(railway)
-    view.showTrain(journey.listCars())
+    view.showTrain(journey.listCars(), 0)
     onChanged()
   }
   const laying = new Laying(railway, view, () => journey.findEngineSpot(), show)
@@ -71,9 +81,10 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
   view.show(railway)
   let lastSeconds = 0
   view.start((seconds) => {
-    journey.advance(Math.min(seconds - lastSeconds, 0.1))
+    const delta = Math.min(seconds - lastSeconds, 0.1)
+    journey.advance(delta)
     lastSeconds = seconds
-    view.showTrain(journey.listCars())
+    view.showTrain(journey.listCars(), delta)
   })
 
   return {
@@ -122,6 +133,8 @@ function nameOf(piece: Piece) {
     station: 'Estação',
     tunnel: 'Túnel',
     bridge: 'Ponte',
+    barrier: 'Barreira',
+    river: 'Rio',
     signal: `Semáforo (${piece.kind === 'signal' && piece.go ? 'verde' : 'vermelho'})`,
     tree: 'Árvore',
   }[piece.kind]

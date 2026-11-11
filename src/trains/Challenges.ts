@@ -1,4 +1,4 @@
-import { opposite } from '../stage/Grid.ts'
+import { opposite, stepFrom } from '../stage/Grid.ts'
 import type { Piece, Railway } from './Railway.ts'
 
 export type Challenge = { goal: string; isMet: (railway: Railway) => boolean }
@@ -29,6 +29,11 @@ export const challenges: Challenge[] = [
     isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'bridge'),
   },
   { goal: 'Faz o comboio passar por cima e por baixo da ponte.', isMet: passesABridgeOverAndUnder },
+  { goal: 'Faz o comboio atravessar um rio por uma ponte.', isMet: crossesARiver },
+  {
+    goal: 'Faz o comboio passar por uma passagem de nível.',
+    isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'barrier'),
+  },
   {
     goal: 'Põe uma agulha no caminho do comboio.',
     isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'points'),
@@ -52,6 +57,14 @@ function passesABridgeOverAndUnder(railway: Railway) {
       .filter((other) => other.spot.x === spot.x && other.spot.z === spot.z)
       .map(({ enter }) => enter)
     return entries.some((enter) => along.includes(enter)) && entries.some((enter) => !along.includes(enter))
+  })
+}
+
+function crossesARiver(railway: Railway) {
+  return visitedPieces(railway).some((piece) => {
+    if (piece.kind !== 'bridge') return false
+    const across = piece.axis === 'horizontal' ? (['north', 'south'] as const) : (['west', 'east'] as const)
+    return across.every((side) => railway.findPieceAt(stepFrom(piece.spot, side))?.kind === 'river')
   })
 }
 

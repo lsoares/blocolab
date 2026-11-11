@@ -18,6 +18,8 @@ export class RailwayView {
   private readonly pieces = new THREE.Group()
   private readonly ghost = new THREE.Group()
   private readonly cars = [createEngine(), createWagon('#2b6cb0'), createWagon('#e0b020')]
+  private barriers: Barrier[] = []
+  private clock = 0
 
   constructor(canvas: HTMLCanvasElement, size: BoardSize) {
     this.stage = new BoardStage(canvas, size)
@@ -31,12 +33,20 @@ export class RailwayView {
 
   show(railway: Railway) {
     disposeChildrenOf(this.pieces)
+    this.barriers = []
     for (const piece of railway.listPieces()) {
-      this.pieces.add(createPieceModel(piece, railway.listLinkedSides(piece.spot)))
+      const { model, barrier } = createPieceModel(
+        piece,
+        railway.listLinkedSides(piece.spot),
+        railway.listWaterSides(piece.spot),
+      )
+      this.pieces.add(model)
+      if (barrier) this.barriers.push({ ...barrier, spot: piece.spot, openness: 1 })
     }
   }
 
-  showTrain(cars: Car[]) {
+  showTrain(cars: Car[], seconds: number) {
+    this.clock += seconds
     this.cars.forEach((model, index) => {
       const car = cars[index]
       model.visible = car !== undefined && !car.hidden
@@ -44,11 +54,22 @@ export class RailwayView {
       model.position.set(car.x, 0.1 + car.lift, car.z)
       model.rotation.y = -car.heading
     })
+    for (const barrier of this.barriers) this.moveGates(barrier, cars, seconds)
+  }
+
+  private moveGates(barrier: Barrier, cars: Car[], seconds: number) {
+    const near = cars.some((car) => Math.hypot(car.x - (barrier.spot.x + 0.5), car.z - (barrier.spot.z + 0.5)) < 1.3)
+    barrier.openness += ((near ? 0 : 1) - barrier.openness) * Math.min(1, seconds * 5)
+    for (const gate of barrier.gates) gate.rotation.z = barrier.openness * 1.2
+    barrier.lamps.forEach((lamp, index) => {
+      const lit = near && Math.floor(this.clock * 3) % 2 === index
+      lamp.material.color.set(lit ? '#ff4d4d' : '#5a1f1f')
+    })
   }
 
   showPlacementGhost(piece: Piece) {
     disposeChildrenOf(this.ghost)
-    const model = createPieceModel(piece, [])
+    const { model } = createPieceModel(piece, [], [])
     showAsGhost(model)
     this.ghost.add(model)
   }
@@ -77,18 +98,28 @@ export class RailwayView {
 
 const wood = '#e0b074'
 const rail = '#9a6a3a'
+const water = '#3b8fd6'
 
 function vectorOf(side: Side) {
   return { north: { x: 0, z: -1 }, east: { x: 1, z: 0 }, south: { x: 0, z: 1 }, west: { x: -1, z: 0 } }[side]
 }
 
-function createPieceModel(piece: Piece, linkedSides: Side[]) {
+type Barrier = {
+  spot: Spot
+  gates: THREE.Group[]
+  lamps: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  openness: number
+}
+
+function createPieceModel(piece: Piece, linkedSides: Side[], waterSides: Side[]) {
   const model = new THREE.Group()
   model.position.set(piece.spot.x + 0.5, 0, piece.spot.z + 0.5)
+  let barrier: Pick<Barrier, 'gates' | 'lamps'> | undefined
   if (piece.kind === 'track') model.add(...createTrack(linkedSides))
   else if (piece.kind === 'tree') model.add(createTree(piece.spot))
+  else if (piece.kind === 'river') model.add(...createWater(waterSides))
   else if (piece.kind === 'points') model.add(...createPoints(piece.side, linkedSides))
-  else if (piece.kind === 'bridge') model.add(...createBridge(piece.axis, linkedSides))
+  else if (piece.kind === 'bridge') model.add(...createBridge(piece.axis, linkedSides, waterSides))
   else {
     const inner = new THREE.Group()
     inner.rotation.y = piece.axis === 'horizontal' ? 0 : Math.PI / 2
@@ -96,9 +127,50 @@ function createPieceModel(piece: Piece, linkedSides: Side[]) {
     if (piece.kind === 'station') inner.add(...createStation())
     if (piece.kind === 'tunnel') inner.add(...createTunnel())
     if (piece.kind === 'signal') inner.add(...createSignal(piece.go))
+    if (piece.kind === 'barrier') {
+      const crossing = createBarrier()
+      inner.add(...crossing.parts)
+      barrier = crossing
+    }
     model.add(inner)
   }
-  return model
+  return { model, barrier }
+}
+
+function createWater(waterSides: Side[]) {
+  const [first, second] = waterSides
+  if (waterSides.length === 2 && isACorner(first, second))
+    return [part(cornerSector(first, second, 0.18, 0.82, 0.06, 0), water, [0, 0, 0])]
+  const arms = waterSides.flatMap(createWaterArm)
+  if (waterSides.length === 2) return arms
+  return [part(new THREE.CylinderGeometry(0.32, 0.32, 0.06, 20), water, [0, 0.03, 0]), ...arms]
+}
+
+function createWaterArm(side: Side) {
+  const { x, z } = vectorOf(side)
+  return [box(x !== 0 ? [0.5, 0.06, 0.64] : [0.64, 0.06, 0.5], water, [x * 0.25, 0.03, z * 0.25])]
+}
+
+function createBarrier() {
+  const gates: THREE.Group[] = []
+  const lamps: Barrier['lamps'] = []
+  const parts: THREE.Object3D[] = [box([0.36, 0.012, 1], '#6b6f76', [0, 0.116, 0])]
+  for (const side of [-1, 1]) {
+    const gate = new THREE.Group()
+    gate.position.set(-0.2, 0.22, side * 0.42)
+    for (const index of [0, 1, 2, 3]) {
+      gate.add(box([0.1, 0.04, 0.04], index % 2 === 0 ? '#d94a3f' : '#f2f2f2', [0.05 + index * 0.1, 0, 0]))
+    }
+    gates.push(gate)
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045, 10, 8),
+      new THREE.MeshBasicMaterial({ color: '#5a1f1f' }),
+    )
+    lamp.position.set(-0.2, 0.32, side * 0.42)
+    lamps.push(lamp)
+    parts.push(standingCylinder(0.035, 0.22, '#555a60', [-0.2, 0.11, side * 0.42]), gate, lamp)
+  }
+  return { parts, gates, lamps }
 }
 
 function createPoints(aimedAt: Side, linkedSides: Side[]) {
@@ -110,7 +182,7 @@ function createPoints(aimedAt: Side, linkedSides: Side[]) {
   return [box([0.64, 0.1, 0.64], wood, [0, 0.05, 0]), ...linkedSides.flatMap(createArm), hub, arrow]
 }
 
-function createBridge(axis: Axis, linkedSides: Side[]) {
+function createBridge(axis: Axis, linkedSides: Side[], waterSides: Side[]) {
   const alongX = axis === 'horizontal'
   const underneath = linkedSides.filter((side) => (vectorOf(side).x !== 0) !== alongX)
   const raised = new THREE.Group()
@@ -122,7 +194,7 @@ function createBridge(axis: Axis, linkedSides: Side[]) {
     part(archedBand(0.18, 0.05, -0.31, 0.2), '#b98a55', [0, 0, 0]),
     part(archedBand(0.18, 0.05, 0.31, 0.2), '#b98a55', [0, 0, 0]),
   )
-  return [raised, ...underneath.flatMap(createArm)]
+  return [raised, ...waterSides.flatMap(createWaterArm), ...underneath.flatMap(createArm)]
 }
 
 function archedBand(thickness: number, width: number, aside: number, lift = 0) {
@@ -171,6 +243,14 @@ function createBuffer(linkedSide: Side) {
 }
 
 function createCorner(a: Side, b: Side) {
+  return [
+    part(cornerSector(a, b, 0.18, 0.82, 0.1, 0), wood, [0, 0, 0]),
+    part(cornerSector(a, b, 0.31, 0.37, 0.05, 0.1), rail, [0, 0, 0]),
+    part(cornerSector(a, b, 0.63, 0.69, 0.05, 0.1), rail, [0, 0, 0]),
+  ]
+}
+
+function cornerSector(a: Side, b: Side, inner: number, outer: number, height: number, lift: number) {
   const to = vectorOf(a)
   const other = vectorOf(b)
   const corner = { x: 0.5 * (to.x + other.x), z: 0.5 * (to.z + other.z) }
@@ -178,13 +258,7 @@ function createCorner(a: Side, b: Side) {
   const angleB = Math.atan2(-to.z, -to.x)
   const sweepIsPositive = ((angleB - angleA + 3 * Math.PI) % (2 * Math.PI)) - Math.PI > 0
   const [start, end] = sweepIsPositive ? [angleA, angleB] : [angleB, angleA]
-  const sector = (inner: number, outer: number, height: number, lift: number) =>
-    ringSector(corner, inner, outer, start, end, height).translate(0, lift, 0)
-  return [
-    part(sector(0.18, 0.82, 0.1, 0), wood, [0, 0, 0]),
-    part(sector(0.31, 0.37, 0.05, 0.1), rail, [0, 0, 0]),
-    part(sector(0.63, 0.69, 0.05, 0.1), rail, [0, 0, 0]),
-  ]
+  return ringSector(corner, inner, outer, start, end, height).translate(0, lift, 0)
 }
 
 function ringSector(

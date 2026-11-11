@@ -21,6 +21,7 @@
   --go: #237a35;
   --wood: #d9a066;
   --rail: #8c5a2b;
+  --water: #3b8fd6;
   --rail-dark: #3a2f28;
   --train: #d94a3f;
   --train-dark: #a83a31;
@@ -138,6 +139,11 @@ body {
     margin: 0;
     padding: 0;
     border: none;
+  }
+
+  .pieces[data-columns="2"] {
+    display: grid;
+    grid-template-columns: repeat(2, var(--control-size));
   }
 
   .corrections {

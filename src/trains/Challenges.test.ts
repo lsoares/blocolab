@@ -116,7 +116,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt..', 't.t..', 'Mtttt', '..t.t', '..ttt'])
 
-    const met = challenges[10].isMet(railway)
+    const met = challenges[12].isMet(railway)
 
     assert.equal(met, true)
   })
@@ -125,7 +125,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['Mtt', 't.t', 'ttt'])
 
-    const met = challenges[10].isMet(railway)
+    const met = challenges[12].isMet(railway)
 
     assert.equal(met, false)
   })
@@ -134,7 +134,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt', 'aaa'])
 
-    const met = challenges[11].isMet(railway)
+    const met = challenges[13].isMet(railway)
 
     assert.equal(met, true)
   })
@@ -143,7 +143,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt', '...', '...', 'aaa'])
 
-    const met = challenges[11].isMet(railway)
+    const met = challenges[13].isMet(railway)
 
     assert.equal(met, false)
   })
@@ -190,7 +190,7 @@ describe('Bridge and points challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['MPt', '.t.'])
 
-    const met = challenges[8].isMet(railway)
+    const met = challenges[10].isMet(railway)
 
     assert.equal(met, true)
   })
@@ -201,7 +201,7 @@ describe('Bridge and points challenges', () => {
     railway.turnPointsAt({ x: 1, z: 0 })
     railway.turnPointsAt({ x: 1, z: 0 })
 
-    const met = challenges[9].isMet(railway)
+    const met = challenges[11].isMet(railway)
 
     assert.equal(met, true)
   })
@@ -211,7 +211,7 @@ describe('Bridge and points challenges', () => {
     draw(railway, ['MPt', '.t.'])
     railway.turnPointsAt({ x: 1, z: 0 })
 
-    const met = challenges[9].isMet(railway)
+    const met = challenges[11].isMet(railway)
 
     assert.equal(met, false)
   })
@@ -220,7 +220,54 @@ describe('Bridge and points challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt..', 't.t..', 'MtBtt', '..t.t', '..ttt'])
 
-    const met = challenges[10].isMet(railway)
+    const met = challenges[12].isMet(railway)
+
+    assert.equal(met, false)
+  })
+})
+
+describe('River and barrier challenges', () => {
+  test('crossing a river over a bridge meets the river challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w...', 'MBttt', '.w...'])
+
+    const met = challenges[8].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('a bridge without a river under it does not meet the river challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MBttt'])
+
+    const met = challenges[8].isMet(railway)
+
+    assert.equal(met, false)
+  })
+
+  test('a river with no bridge does not meet the river challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w.', 'Mtt', '.w.'])
+
+    const met = challenges[8].isMet(railway)
+
+    assert.equal(met, false)
+  })
+
+  test('a barrier on the way meets the level crossing challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MtXtt'])
+
+    const met = challenges[9].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('a barrier off the way does not meet the level crossing challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['Mtt', '...', 'X..'])
+
+    const met = challenges[9].isMet(railway)
 
     assert.equal(met, false)
   })
@@ -245,6 +292,8 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 'E') return { kind: 'station', spot, axis: 'horizontal' }
   if (symbol === 'U') return { kind: 'tunnel', spot, axis: 'horizontal' }
   if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
+  if (symbol === 'w') return { kind: 'river', spot }
+  if (symbol === 'X') return { kind: 'barrier', spot, axis: 'horizontal' }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }
   return undefined

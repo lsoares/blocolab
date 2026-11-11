@@ -10,6 +10,7 @@ export class Laying {
   private gestureStart: Spot = { x: 0, z: 0 }
   private laidUpTo: Spot = { x: 0, z: 0 }
   private trackStarted = false
+  private laidKind: 'track' | 'river' = 'track'
   private cursor: Spot
   private cursorAxis: Axis = 'horizontal'
   private readonly railway: Railway
@@ -55,7 +56,7 @@ export class Laying {
     canvas.setPointerCapture(event.pointerId)
     if (this.tool === 'eraser') return this.startErasing(spot)
     if (this.isTappingAControl(spot)) return this.useControl(spot)
-    if (this.tool === 'track') return this.startLaying(spot)
+    if (this.tool === 'track' || this.tool === 'river') return this.startLaying(spot)
     if (this.tool === 'train') return this.placeTrain(spot)
     this.gesture = 'turning'
     this.gestureStart = spot
@@ -69,7 +70,7 @@ export class Laying {
     if (this.gesture === 'erasing') return this.erase(spot)
     if (this.gesture === 'laying') return this.extendTrack(spot)
     if (this.gesture === 'turning') return this.previewAt(this.gestureStart, axisOfDrag(this.gestureStart, spot))
-    if (this.tool === 'track') return this.view.hideGhost()
+    if (this.tool === 'track' || this.tool === 'river') return this.view.hideGhost()
     this.previewAt(spot, 'horizontal')
   }
 
@@ -90,6 +91,7 @@ export class Laying {
   }
 
   private startLaying(spot: Spot) {
+    this.laidKind = this.tool === 'river' ? 'river' : 'track'
     this.gesture = 'laying'
     this.laidUpTo = spot
     this.trackStarted = false
@@ -103,7 +105,7 @@ export class Laying {
       ? pathBetween(this.laidUpTo, spot)
       : [this.laidUpTo, ...pathBetween(this.laidUpTo, spot)]
     for (const cell of cells) {
-      if (this.railway.hasRoomFor(cell)) this.railway.placePiece({ kind: 'track', spot: cell })
+      if (this.railway.hasRoomFor(cell)) this.railway.placePiece({ kind: this.laidKind, spot: cell })
     }
     this.trackStarted = true
     this.laidUpTo = spot
@@ -156,8 +158,7 @@ export class Laying {
   }
 
   private previewTrain(spot: Spot) {
-    const piece = this.railway.findPieceAt(spot)
-    if (piece && piece.kind !== 'tree') this.view.showTrainGhost(spot)
+    if (this.railway.isRailAt(spot)) this.view.showTrainGhost(spot)
     else this.view.hideGhost()
   }
 
@@ -205,9 +206,11 @@ const arrowSteps: Record<string, { dx: number; dz: number }> = {
 }
 
 function buildPiece(tool: Tool, spot: Spot, axis: Axis): Piece | undefined {
-  if (tool === 'track' || tool === 'tree') return { kind: tool, spot }
+  if (tool === 'track' || tool === 'tree' || tool === 'river') return { kind: tool, spot }
   if (tool === 'signal') return { kind: tool, spot, axis, go: false }
-  if (tool === 'station' || tool === 'tunnel' || tool === 'bridge') return { kind: tool, spot, axis }
+  if (tool === 'station' || tool === 'tunnel' || tool === 'bridge' || tool === 'barrier') {
+    return { kind: tool, spot, axis }
+  }
   if (tool === 'points') return { kind: tool, spot, side: 'east' }
   return undefined
 }

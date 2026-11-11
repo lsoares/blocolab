@@ -152,3 +152,46 @@ test('the train game offers the bridge and the points', async ({ page }) => {
 
   await expect(page.getByRole('radio', { name: 'Agulha' })).toBeVisible()
 })
+
+test('a river appears while it is still being dragged', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Rio')
+  await game.pressBoardAt(-100, 0)
+
+  await game.dragBoardTo(100, 0)
+
+  await expect(game.getStatus()).toHaveText(/^[2-9] peças$/)
+})
+
+test('a river says what it is', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Rio')
+  await game.pressBoardAt(-100, 0)
+  await game.dragBoardTo(100, 0)
+  await game.releaseBoard()
+
+  await game.hoverBoard()
+
+  await expect(game.getPieceName()).toHaveText('Rio')
+})
+
+test('placing a barrier says it is a barrier', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Barreira')
+  await game.getBoard().click()
+
+  await game.hoverBoard()
+
+  await expect(game.getPieceName()).toHaveText('Barreira')
+})
+
+test('the train game offers the river and the barrier', async ({ page }) => {
+  const game = new GamePage(page)
+
+  await game.open('comboio')
+
+  await expect(page.getByRole('radio', { name: 'Barreira' })).toBeVisible()
+})

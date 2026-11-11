@@ -26,6 +26,7 @@ function showTheGames(all: Game[], chosen: Game) {
 
 function showThePieces(chosen: Game) {
   const pieces = document.querySelector('.pieces')
+  if (chosen.tools.length > 8) pieces?.setAttribute('data-columns', '2')
   for (const [index, tool] of chosen.tools.entries()) {
     pieces?.insertAdjacentHTML(
       'beforeend',
