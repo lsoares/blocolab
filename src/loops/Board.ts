@@ -98,6 +98,12 @@ export class Board {
     return this.measureCircuit().live.some((live) => live.x === spot.x && live.z === spot.z)
   }
 
+  listFlowsAt(spot: Spot) {
+    return this.measureCircuit()
+      .flows.filter((flow) => flow.spot.x === spot.x && flow.spot.z === spot.z)
+      .map(({ side, out }) => ({ side, out }))
+  }
+
   hasShortCircuit() {
     return this.measureCircuit().short
   }

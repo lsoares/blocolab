@@ -62,10 +62,11 @@ a campainha. Série e paralelo, duas bombas, torneira geral e "sem resistência"
 funcionam como nos circuitos; só muda a roupa, os nomes e os 14 desafios. Serve para a criança
 ver que **a água e a eletricidade se comportam da mesma maneira**.
 
-- Os canos são transparentes e só mostram água (com gotas a mexer) num circuito fechado; o
-  chafariz jorra mais alto com mais pressão e a roda gira mais depressa.
-- Ideias a seguir: setas a mostrar o sentido da água, som de água, depósito com nível que
-  desce, pressão e caudal com números para os mais velhos, vazamentos (cano partido), e
+- Os canos são transparentes e só mostram água num circuito fechado, com pontas de seta a
+  correr no sentido real da corrente (calculado na rede, também nas ramificações em paralelo);
+  o chafariz jorra mais alto com mais pressão e a roda gira mais depressa. Enquanto a água
+  corre ouve-se um murmúrio (ruído filtrado com ondulação lenta).
+- Ideias a seguir: depósito com nível que desce, pressão e caudal com números para os mais velhos, vazamentos (cano partido), e
   ligar a água ao comboio (ponte sobre o rio com cheias).
 
 ## Segundo jogo: Comboio (2026-11-11)

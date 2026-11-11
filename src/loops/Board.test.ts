@@ -473,3 +473,35 @@ describe('Wires that carry current', () => {
     assert.equal(live, false)
   })
 })
+
+describe('Direction of the flow', () => {
+  test('a wire in a working loop has flow leaving on one side and entering on the other', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const flows = board.listFlowsAt({ x: 0, z: 1 })
+
+    const north = flows.find(({ side }) => side === 'north')?.out ?? 0
+    const south = flows.find(({ side }) => side === 'south')?.out ?? 0
+    assert.ok(Math.abs(north) > 0.5 && Math.abs(north + south) < 1e-6, `north ${north}, south ${south}`)
+  })
+
+  test('the two sides of a loop flow in opposite directions', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const left = board.listFlowsAt({ x: 0, z: 1 }).find(({ side }) => side === 'north')?.out ?? 0
+    const right = board.listFlowsAt({ x: 2, z: 1 }).find(({ side }) => side === 'north')?.out ?? 0
+
+    assert.ok(left * right < 0, `left ${left}, right ${right}`)
+  })
+
+  test('a loop with a gap has no flow', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w..', 'wLw'])
+
+    const flows = board.listFlowsAt({ x: 0, z: 1 })
+
+    assert.deepEqual(flows, [])
+  })
+})

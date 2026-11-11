@@ -6,6 +6,7 @@ export type CircuitState = {
   powered: Spot[]
   strengths: { spot: Spot; strength: number }[]
   live: Spot[]
+  flows: { spot: Spot; side: Side; out: number }[]
 }
 
 export function analyzeCircuit(pieces: Piece[]): CircuitState {
@@ -31,7 +32,7 @@ export function analyzeCircuit(pieces: Piece[]): CircuitState {
       return { piece, from: nodes.find(terminalOf(piece, first)), to: nodes.find(terminalOf(piece, second)) }
     })
   if (branches.some(({ piece, from, to }) => piece.kind === 'battery' && from === to)) {
-    return { short: true, powered: [], strengths: [], live: [] }
+    return { short: true, powered: [], strengths: [], live: [], flows: [] }
   }
 
   const closedLoops = findBlocks(branches.filter(({ from, to }) => from !== to)).filter((block) =>
@@ -45,10 +46,11 @@ export function analyzeCircuit(pieces: Piece[]): CircuitState {
     .filter((piece) => piece.kind === 'wire' || (piece.kind === 'switch' && piece.closed))
     .filter((piece) => loopNodes.has(nodes.find(terminalOf(piece, terminalSidesOf(piece)[0]))))
     .map(({ spot }) => spot)
-  const strengths = measureStrengths(branches).filter(({ spot }) =>
+  const network = measureNetwork(branches)
+  const strengths = network.strengths.filter(({ spot }) =>
     powered.some((working) => working.x === spot.x && working.z === spot.z),
   )
-  return { short: false, powered, strengths, live }
+  return { short: false, powered, strengths, live, flows: shareFlowAmongPipes(pieces, network.injections) }
 }
 
 export function turnToMeetNeighbours(pieces: Piece[]): Piece[] {
@@ -172,7 +174,9 @@ function resistanceOf(piece: Piece) {
   return { battery: batteryInnerResistance, lamp: 1, motor: 0.8, buzzer: 1.2, wire: 0, switch: 0 }[piece.kind]
 }
 
-function measureStrengths(branches: Branch[]) {
+type Injection = { cell: Spot; facing: Side; amount: number }
+
+function measureNetwork(branches: Branch[]) {
   const nodeNumbers = new Map<string, number>()
   for (const { from, to } of branches) {
     for (const node of [from, to]) if (!nodeNumbers.has(node)) nodeNumbers.set(node, nodeNumbers.size)
@@ -180,14 +184,72 @@ function measureStrengths(branches: Branch[]) {
   const batteryCount = branches.filter(({ piece }) => piece.kind === 'battery').length
   const orientations = chooseOrientations(batteryCount, (flips) => loadPowerOf(branches, nodeNumbers, flips))
   const voltages = solveVoltages(branches, nodeNumbers, orientations)
-  return branches
-    .filter(({ piece }) => piece.kind !== 'battery')
-    .map(({ piece, from, to }) => {
-      const resistance = resistanceOf(piece)
-      const current =
-        Math.abs(voltageAt(voltages, nodeNumbers, from) - voltageAt(voltages, nodeNumbers, to)) / resistance
-      return { spot: piece.spot, strength: current / (batteryVoltage / (resistance + batteryInnerResistance)) }
+  const strengths: { spot: Spot; strength: number }[] = []
+  const injections: Injection[] = []
+  let batteryNumber = 0
+  for (const { piece, from, to } of branches) {
+    const [first, second] = terminalSidesOf(piece)
+    const resistance = resistanceOf(piece)
+    const drop = voltageAt(voltages, nodeNumbers, from) - voltageAt(voltages, nodeNumbers, to)
+    const enter = (side: Side, amount: number) =>
+      injections.push({ cell: stepFrom(piece.spot, side), facing: opposite[side], amount })
+    if (piece.kind === 'battery') {
+      const plusIsFirst = orientations[batteryNumber++]
+      const throughBattery = (batteryVoltage - (plusIsFirst ? drop : -drop)) / resistance
+      enter(plusIsFirst ? first : second, throughBattery)
+      enter(plusIsFirst ? second : first, -throughBattery)
+      continue
+    }
+    strengths.push({
+      spot: piece.spot,
+      strength: Math.abs(drop) / resistance / (batteryVoltage / (resistance + batteryInnerResistance)),
     })
+    enter(first, -drop / resistance)
+    enter(second, drop / resistance)
+  }
+  return { strengths, injections }
+}
+
+function shareFlowAmongPipes(pieces: Piece[], injections: Injection[]) {
+  const pipes = new Map(
+    pieces
+      .filter((piece) => piece.kind === 'wire' || (piece.kind === 'switch' && piece.closed))
+      .map((piece) => [keyOf(piece.spot), piece]),
+  )
+  const injected = new Map<string, number>()
+  const flows: CircuitState['flows'] = []
+  for (const { cell, facing, amount } of injections) {
+    const piece = pipes.get(keyOf(cell))
+    if (!piece) continue
+    injected.set(keyOf(cell), (injected.get(keyOf(cell)) ?? 0) + amount)
+    if (Math.abs(amount) > 1e-4) flows.push({ spot: piece.spot, side: facing, out: -amount })
+  }
+  const visited = new Set<string>()
+  for (const root of pipes.values()) {
+    if (visited.has(keyOf(root.spot))) continue
+    const order: { piece: Piece; parent?: { piece: Piece; towardParent: Side } }[] = [{ piece: root }]
+    visited.add(keyOf(root.spot))
+    for (let index = 0; index < order.length; index++) {
+      const { piece } = order[index]
+      for (const side of terminalSidesOf(piece)) {
+        const next = pipes.get(keyOf(stepFrom(piece.spot, side)))
+        if (!next || visited.has(keyOf(next.spot)) || !terminalSidesOf(next).includes(opposite[side])) continue
+        visited.add(keyOf(next.spot))
+        order.push({ piece: next, parent: { piece, towardParent: opposite[side] } })
+      }
+    }
+    const carried = new Map(order.map(({ piece }) => [keyOf(piece.spot), injected.get(keyOf(piece.spot)) ?? 0]))
+    for (let index = order.length - 1; index > 0; index--) {
+      const { piece, parent } = order[index]
+      if (!parent) continue
+      const amount = carried.get(keyOf(piece.spot)) ?? 0
+      carried.set(keyOf(parent.piece.spot), (carried.get(keyOf(parent.piece.spot)) ?? 0) + amount)
+      if (Math.abs(amount) <= 1e-4) continue
+      flows.push({ spot: piece.spot, side: parent.towardParent, out: amount })
+      flows.push({ spot: parent.piece.spot, side: opposite[parent.towardParent], out: -amount })
+    }
+  }
+  return flows
 }
 
 function chooseOrientations(batteryCount: number, powerOf: (flips: boolean[]) => number) {

@@ -40,6 +40,7 @@ export class WaterView {
         powered: board.isPoweredAt(piece.spot),
         strength: board.measureStrengthAt(piece.spot),
         live: board.isLiveAt(piece.spot),
+        flows: board.listFlowsAt(piece.spot),
         linkedSides: board.listLinkedSides(piece.spot),
         stillLife: this.reducedMotion.matches,
       })
@@ -54,6 +55,7 @@ export class WaterView {
       powered: false,
       strength: 0,
       live: false,
+      flows: [],
       linkedSides: [],
       stillLife: true,
     })
@@ -75,7 +77,14 @@ export class WaterView {
   }
 }
 
-type PieceLook = { powered: boolean; strength: number; live: boolean; linkedSides: Side[]; stillLife: boolean }
+type PieceLook = {
+  powered: boolean
+  strength: number
+  live: boolean
+  flows: { side: Side; out: number }[]
+  linkedSides: Side[]
+  stillLife: boolean
+}
 
 type PieceParts = { parts: THREE.Object3D[]; animate?: (seconds: number) => void }
 
@@ -85,7 +94,7 @@ const water = '#3b8fd6'
 
 const glass = new THREE.MeshLambertMaterial({ color: '#b9d3e6', transparent: true, opacity: 0.5, depthWrite: false })
 const wetness = new THREE.MeshLambertMaterial({ color: water })
-const droplet = new THREE.MeshBasicMaterial({ color: '#e8f6ff' })
+const foam = new THREE.MeshBasicMaterial({ color: '#e8f6ff' })
 
 function createPieceModel(piece: Piece, look: PieceLook) {
   const model = new THREE.Group()
@@ -113,7 +122,7 @@ function vectorOf(side: Side) {
   return { north: { x: 0, z: -1 }, east: { x: 1, z: 0 }, south: { x: 0, z: 1 }, west: { x: -1, z: 0 } }[side]
 }
 
-function createPipe({ linkedSides, live, stillLife }: PieceLook): PieceParts {
+function createPipe({ linkedSides, live, flows, stillLife }: PieceLook): PieceParts {
   const tubes = (radius: number, material: THREE.Material) =>
     linkedSides.map((side) => {
       const { x, z } = vectorOf(side)
@@ -131,24 +140,32 @@ function createPipe({ linkedSides, live, stillLife }: PieceLook): PieceParts {
   const parts: THREE.Object3D[] = [...tubes(pipeRadius, glass), joint(pipeRadius, glass)]
   if (!live) return { parts }
   parts.push(...tubes(pipeRadius * 0.7, wetness), joint(pipeRadius * 0.7, wetness))
-  const drops = linkedSides.flatMap((side) => [0, 1].map((phase) => ({ side, phase, mesh: createDroplet(0.05) })))
-  parts.push(...drops.map(({ mesh }) => mesh))
-  return {
-    parts,
-    animate: stillLife
-      ? undefined
-      : (seconds) => {
-          for (const { side, phase, mesh } of drops) {
-            const { x, z } = vectorOf(side)
-            const along = 0.08 + 0.38 * (0.5 + 0.5 * Math.sin(seconds * 3 + phase * Math.PI))
-            mesh.position.set(x * along, pipeRadius, z * along)
-          }
-        },
+  const arrows = flows.flatMap(({ side, out }) =>
+    [0, 0.5].map((phase) => ({ side, out, phase, mesh: createArrowhead(Math.sign(out), side) })),
+  )
+  parts.push(...arrows.map(({ mesh }) => mesh))
+  const place = (seconds: number) => {
+    for (const { side, out, phase, mesh } of arrows) {
+      const { x, z } = vectorOf(side)
+      const progress = (seconds * Math.min(1, Math.abs(out)) * 0.8 + phase) % 1
+      const along = out > 0 ? 0.08 + 0.38 * progress : 0.46 - 0.38 * progress
+      mesh.position.set(x * along, pipeRadius, z * along)
+    }
   }
+  place(0.25)
+  return { parts, animate: stillLife ? undefined : place }
+}
+
+function createArrowhead(direction: number, side: Side) {
+  const { x, z } = vectorOf(side)
+  const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.16, 10), foam)
+  arrow.rotation.z = -x * direction * (Math.PI / 2)
+  arrow.rotation.x = z * direction * (Math.PI / 2)
+  return arrow
 }
 
 function createDroplet(radius: number) {
-  return new THREE.Mesh(new THREE.SphereGeometry(radius, 8, 6), droplet)
+  return new THREE.Mesh(new THREE.SphereGeometry(radius, 8, 6), foam)
 }
 
 function createStubs(length = 0.22) {

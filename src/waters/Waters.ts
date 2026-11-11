@@ -4,6 +4,7 @@ import { isMet } from '../loops/Challenge.ts'
 import { Placing, type Tool } from '../loops/Placing.ts'
 import { measureBoardThatFits } from '../stage/BoardCamera.ts'
 import { challenges } from './Challenges.ts'
+import { WaterSound } from './WaterSound.ts'
 import { WaterView } from './WaterView.ts'
 
 export const waters: Game = {
@@ -49,7 +50,11 @@ export const waters: Game = {
 function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSession {
   const board = new Board(measureBoardThatFits(canvas.clientWidth, canvas.clientHeight))
   const view = new WaterView(canvas, board.size, matchMedia('(prefers-reduced-motion: reduce)'))
+  const sound = new WaterSound()
+  document.addEventListener('visibilitychange', () => document.hidden && sound.silence())
   const show = () => {
+    if (isWaterRunning(board)) sound.play()
+    else sound.silence()
     view.show(board)
     onChanged()
   }
@@ -114,4 +119,9 @@ function nameOf(piece: Piece, board: Board) {
     motor: `Roda de água (${working ? `a girar${weak ? ' devagar' : strong ? ' depressa' : ''}` : 'parada'})`,
     buzzer: `Borbulhador (${working ? 'a borbulhar' : 'calado'})`,
   }[piece.kind]
+}
+
+function isWaterRunning(board: Board) {
+  const users = ['lamp', 'motor', 'buzzer']
+  return board.listPieces().some((piece) => users.includes(piece.kind) && board.isPoweredAt(piece.spot))
 }
