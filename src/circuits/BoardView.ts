@@ -1,47 +1,40 @@
 import * as THREE from 'three'
-import { BoardCamera } from '../stage/BoardCamera.ts'
+import { BoardStage } from '../stage/BoardStage.ts'
 import type { BoardSize, Side, Spot } from '../stage/Grid.ts'
+import {
+  box,
+  createErasureMarker,
+  disposeChildrenOf,
+  lyingCylinder,
+  part,
+  showAsGhost,
+  standingCylinder,
+} from '../stage/Parts.ts'
 import type { Board, Piece } from './Board.ts'
 
 export class BoardView {
-  readonly camera: BoardCamera
-  private readonly renderer: THREE.WebGLRenderer
-  private readonly scene = new THREE.Scene()
-  private readonly surface = new THREE.Group()
+  private readonly stage: BoardStage
   private readonly pieces = new THREE.Group()
   private readonly ghost = new THREE.Group()
-  private readonly raycaster = new THREE.Raycaster()
   private animations: ((seconds: number) => void)[] = []
 
   constructor(
-    private readonly canvas: HTMLCanvasElement,
+    canvas: HTMLCanvasElement,
     size: BoardSize,
     private readonly reducedMotion: MediaQueryList,
   ) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
-    this.renderer.setPixelRatio(window.devicePixelRatio)
-    this.renderer.shadowMap.enabled = true
-    this.camera = new BoardCamera(size)
-
-    this.surface.position.set(-size.columns / 2, 0, -size.rows / 2)
-    this.surface.add(createPlate(size), createStuds(size), ...createRimWall(size), this.pieces, this.ghost)
-    this.scene.add(this.surface, ...createLights(size))
-
-    new ResizeObserver(() => this.fitToCanvas()).observe(canvas)
-    this.fitToCanvas()
+    this.stage = new BoardStage(canvas, size)
+    this.stage.surface.add(this.pieces, this.ghost)
   }
 
   start() {
-    const timer = new THREE.Timer()
-    this.renderer.setAnimationLoop((timestamp) => {
-      timer.update(timestamp)
-      for (const animate of this.animations) animate(timer.getElapsed())
-      this.renderer.render(this.scene, this.camera.camera)
+    this.stage.start((seconds) => {
+      for (const animate of this.animations) animate(seconds)
     })
   }
 
   show(board: Board) {
-    this.disposeChildrenOf(this.pieces)
+    disposeChildrenOf(this.pieces)
     this.animations = []
     for (const piece of board.listPieces()) {
       const { model, animate } = createPieceModel(piece, {
@@ -56,100 +49,27 @@ export class BoardView {
   }
 
   showPlacementGhost(piece: Piece) {
-    this.disposeChildrenOf(this.ghost)
+    disposeChildrenOf(this.ghost)
     const { model } = createPieceModel(piece, { powered: false, strength: 0, linkedSides: [], stillLife: true })
-    model.traverse((part) => {
-      if (part instanceof THREE.Mesh) Object.assign(part, { material: placementLook, castShadow: false })
-    })
+    showAsGhost(model)
     this.ghost.add(model)
   }
 
   showErasureGhost(spot: Spot) {
-    this.disposeChildrenOf(this.ghost)
-    const marker = new THREE.Group().add(
-      new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.5, 0.96), erasureLook),
-      new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(0.96, 0.5, 0.96)),
-        new THREE.LineBasicMaterial({ color: '#7a0000' }),
-      ),
-      createCross(),
-    )
-    marker.position.set(spot.x + 0.5, 0.25, spot.z + 0.5)
-    this.ghost.add(marker)
+    disposeChildrenOf(this.ghost)
+    this.ghost.add(createErasureMarker(spot))
   }
 
   hideGhost() {
-    this.disposeChildrenOf(this.ghost)
+    disposeChildrenOf(this.ghost)
   }
 
-  pickSpot(pointer: PointerEvent): Spot | undefined {
-    const bounds = this.canvas.getBoundingClientRect()
-    this.raycaster.setFromCamera(
-      new THREE.Vector2(
-        ((pointer.clientX - bounds.left) / bounds.width) * 2 - 1,
-        -((pointer.clientY - bounds.top) / bounds.height) * 2 + 1,
-      ),
-      this.camera.camera,
-    )
-    const midHeight = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.3)
-    const point = this.raycaster.ray.intersectPlane(midHeight, new THREE.Vector3())
-    if (!point) return undefined
-    const { x, z } = this.surface.worldToLocal(point)
-    return { x: Math.floor(x), z: Math.floor(z) }
-  }
-
-  private disposeChildrenOf(group: THREE.Group) {
-    for (const child of [...group.children]) {
-      group.remove(child)
-      child.traverse((part) => {
-        if (part instanceof THREE.Mesh || part instanceof THREE.LineSegments) part.geometry.dispose()
-      })
-    }
-  }
-
-  private fitToCanvas() {
-    const { clientWidth, clientHeight } = this.canvas
-    this.renderer.setSize(clientWidth, clientHeight, false)
-    this.camera.fitTo(clientWidth, clientHeight)
+  pickSpot(pointer: PointerEvent) {
+    return this.stage.pickSpot(pointer)
   }
 }
 
 type PieceLook = { powered: boolean; strength: number; linkedSides: Side[]; stillLife: boolean }
-
-const placementLook = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55 })
-const erasureLook = new THREE.MeshBasicMaterial({ color: '#ff4d4d', transparent: true, opacity: 0.35 })
-
-const paints = new Map<string, THREE.MeshLambertMaterial>()
-
-function paint(color: string) {
-  const known = paints.get(color)
-  if (known) return known
-  const made = new THREE.MeshLambertMaterial({ color })
-  paints.set(color, made)
-  return made
-}
-
-function part(geometry: THREE.BufferGeometry, color: string, position: [number, number, number]) {
-  const mesh = new THREE.Mesh(geometry, paint(color))
-  mesh.position.set(...position)
-  mesh.castShadow = true
-  mesh.receiveShadow = true
-  return mesh
-}
-
-function box(size: [number, number, number], color: string, position: [number, number, number]) {
-  return part(new THREE.BoxGeometry(...size), color, position)
-}
-
-function lyingCylinder(radius: number, length: number, color: string, position: [number, number, number]) {
-  const mesh = part(new THREE.CylinderGeometry(radius, radius, length, 24), color, position)
-  mesh.rotation.z = Math.PI / 2
-  return mesh
-}
-
-function standingCylinder(radius: number, height: number, color: string, position: [number, number, number]) {
-  return part(new THREE.CylinderGeometry(radius, radius, height, 24), color, position)
-}
 
 const cableRadius = 0.14
 
@@ -308,60 +228,4 @@ function createBuzzer(_piece: Piece, { powered, stillLife }: PieceLook): PiecePa
           }
         : undefined,
   }
-}
-
-function createPlate({ columns, rows }: BoardSize) {
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(columns, 0.4, rows), paint('#4a9d6b'))
-  plate.position.set(columns / 2, -0.2, rows / 2)
-  plate.receiveShadow = true
-  return plate
-}
-
-function createStuds({ columns, rows }: BoardSize) {
-  const studs = new THREE.InstancedMesh(
-    new THREE.CylinderGeometry(0.1, 0.1, 0.05, 16),
-    paint('#3b8156'),
-    columns * rows,
-  )
-  const placement = new THREE.Matrix4()
-  for (let index = 0; index < columns * rows; index++) {
-    studs.setMatrixAt(
-      index,
-      placement.makeTranslation((index % columns) + 0.5, 0.02, Math.floor(index / columns) + 0.5),
-    )
-  }
-  studs.receiveShadow = true
-  return studs
-}
-
-function createRimWall({ columns, rows }: BoardSize) {
-  const thickness = 0.6
-  const wall = (size: [number, number, number], position: [number, number, number]) => box(size, '#c28e5a', position)
-  return [
-    wall([columns + 2 * thickness, 0.9, thickness], [columns / 2, 0.05, -thickness / 2]),
-    wall([columns + 2 * thickness, 0.9, thickness], [columns / 2, 0.05, rows + thickness / 2]),
-    wall([thickness, 0.9, rows], [-thickness / 2, 0.05, rows / 2]),
-    wall([thickness, 0.9, rows], [columns + thickness / 2, 0.05, rows / 2]),
-  ]
-}
-
-function createCross() {
-  const top = 0.27
-  return new THREE.LineSegments(
-    new THREE.BufferGeometry().setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute([-0.48, top, -0.48, 0.48, top, 0.48, -0.48, top, 0.48, 0.48, top, -0.48], 3),
-    ),
-    new THREE.LineBasicMaterial({ color: '#7a0000' }),
-  )
-}
-
-function createLights({ columns, rows }: BoardSize) {
-  const sun = new THREE.DirectionalLight('#ffffff', 2)
-  sun.position.set(columns * 0.3, 40, rows * 0.8)
-  sun.castShadow = true
-  sun.shadow.mapSize.set(2048, 2048)
-  const reach = Math.max(columns, rows)
-  Object.assign(sun.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, far: 120 })
-  return [new THREE.HemisphereLight('#ffffff', '#7a9a6a', 1.8), sun]
 }
