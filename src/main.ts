@@ -5,9 +5,16 @@ import { WorldView } from './WorldView.ts'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
 if (!canvas) throw new Error('The page has no #world canvas')
-const world = new World({ width: 32, height: 12, depth: 32 })
+const world = new World({ width: 32, height: 1, depth: 32 })
 const view = new WorldView(canvas, world.size)
-const painting = new Painting(world, view)
+const blockCount = document.querySelector('output')
+const blockCountPlural = new Intl.PluralRules('pt-PT')
+const showWorld = () => {
+  view.show(world)
+  const count = world.listCubes().length
+  if (blockCount) blockCount.textContent = `${count} ${blockCountPlural.select(count) === 'one' ? 'bloco' : 'blocos'}`
+}
+const painting = new Painting(world, view, showWorld)
 painting.listenTo(canvas)
 
 const toolButtons = document.querySelectorAll<HTMLButtonElement>('[data-tool]')
@@ -37,5 +44,5 @@ canvas.addEventListener(
   { passive: false },
 )
 
-view.show(world)
+showWorld()
 view.start()

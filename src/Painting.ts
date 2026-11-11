@@ -10,6 +10,7 @@ export class Painting {
   constructor(
     private readonly world: World,
     private readonly view: WorldView,
+    private readonly onWorldChanged: () => void,
   ) {}
 
   chooseTool(tool: Tool) {
@@ -62,7 +63,7 @@ export class Painting {
   private applyTool(target: Position) {
     if (this.tool === 'brush') this.world.placeCube(target)
     else this.world.eraseCube(target)
-    this.view.show(this.world)
+    this.onWorldChanged()
     this.view.hideGhost()
   }
 }

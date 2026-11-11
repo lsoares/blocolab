@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --test 'src/**/*.test.ts'",
+    "test": "node --test 'src/**/*.test.ts' && playwright test",
     "deploy": "npm run build && cd dist && git init -q -b gh-pages && git add -A && git commit -qm \"Publish\" && git push -qf \"$(git -C .. remote get-url origin)\" gh-pages",
     "check": "tsc && biome check . && knip",
     "format": "biome check --write ."
@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.6",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^24.19.2",
     "@types/three": "^0.187.0",
     "knip": "^6.44.2",
