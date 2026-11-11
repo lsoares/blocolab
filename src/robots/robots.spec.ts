@@ -28,6 +28,25 @@ test('the robot reaches the star when the cards lead there', async ({ page }) =>
   await expect(game.getChallenge()).toContainText('✓ Conseguiste!')
 })
 
+test('repeat makes the robot take three steps with one card', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('robo')
+  await page.getByRole('button', { name: 'Avançar' }).click()
+  await page.getByRole('button', { name: 'Repetir ×3' }).click()
+
+  await page.getByRole('button', { name: 'Executar' }).click()
+
+  await expect(game.getChallenge()).toContainText('✓ Conseguiste!')
+})
+
+test('repeat is not offered before any card', async ({ page }) => {
+  const game = new GamePage(page)
+
+  await game.open('robo')
+
+  await expect(page.getByRole('button', { name: 'Repetir ×3' })).toBeDisabled()
+})
+
 test('the robot does not reach the star when the cards fall short', async ({ page }) => {
   const game = new GamePage(page)
   await game.open('robo')

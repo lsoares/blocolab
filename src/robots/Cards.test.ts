@@ -78,4 +78,36 @@ describe('Following the cards', () => {
 
     assert.equal(run.outcome, 'reached-star')
   })
+
+  test('repeat makes the card before it run three times in all', () => {
+    const course = buildCourse(['>..*'], size)
+
+    const run = followCards(course, ['forward', 'repeat'])
+
+    assert.equal(run.outcome, 'reached-star')
+  })
+
+  test('repeating a turn turns three times', () => {
+    const course = buildCourse(['>...'], size)
+
+    const run = followCards(course, ['turn-right', 'repeat'])
+
+    assert.equal(run.poses.at(-1)?.heading, 'north')
+  })
+
+  test('repeat with nothing before it does nothing', () => {
+    const course = buildCourse(['>...'], size)
+
+    const run = followCards(course, ['repeat'])
+
+    assert.equal(run.poses.length, 1)
+  })
+
+  test('each step of a repeat belongs to the repeat card', () => {
+    const course = buildCourse(['>....*'], size)
+
+    const run = followCards(course, ['forward', 'repeat'])
+
+    assert.deepEqual(run.cardOfStep, [0, 1, 1])
+  })
 })

@@ -19,9 +19,14 @@ export class Mission {
   }
 
   addCard(card: Card) {
-    if (this.isRunning()) return
+    if (this.isRunning() || (card === 'repeat' && !this.canRepeat())) return
     this.run = undefined
     this.cards.push(card)
+  }
+
+  canRepeat() {
+    const last = this.cards.at(-1)
+    return last !== undefined && last !== 'repeat' && !this.isRunning()
   }
 
   removeLastCard() {
@@ -54,7 +59,7 @@ export class Mission {
   }
 
   findCardInProgress() {
-    return this.isRunning() ? Math.floor(this.elapsed / stepSeconds) : undefined
+    return this.isRunning() ? this.run?.cardOfStep[Math.floor(this.elapsed / stepSeconds)] : undefined
   }
 
   hasReachedStar() {

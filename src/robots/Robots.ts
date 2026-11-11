@@ -21,7 +21,12 @@ function startSession(canvas: HTMLCanvasElement, onChanged: () => void): GameSes
   let mission = new Mission(buildCourse(challenges[0].drawing, size))
   let wasShowing = ''
   const show = () => {
-    tray.show({ cards: mission.listCards(), running: mission.isRunning(), current: mission.findCardInProgress() })
+    tray.show({
+      cards: mission.listCards(),
+      running: mission.isRunning(),
+      canRepeat: mission.canRepeat(),
+      current: mission.findCardInProgress(),
+    })
     wasShowing = describeMission(mission)
     onChanged()
   }

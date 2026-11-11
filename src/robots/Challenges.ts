@@ -7,4 +7,6 @@ export const challenges: Challenge[] = [
   { goal: 'Vira à esquerda para chegar à estrela.', drawing: ['...*', '.##.', '>...'] },
   { goal: 'A estrela ficou para trás!', drawing: ['*..>'] },
   { goal: 'Passa por entre as pedras.', drawing: ['>.#.*', '..#..', '.....'] },
+  { goal: 'A estrela está longe! Usa Repetir ×3.', drawing: ['>.....*'] },
+  { goal: 'Vira e usa o Repetir ×3.', drawing: ['>...', '....', '...*'] },
 ]

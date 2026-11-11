@@ -2,12 +2,13 @@ import type { Card } from './Cards.ts'
 
 type Handlers = { onCard(card: Card): void; onRun(): void; onClear(): void }
 
-type TrayState = { cards: Card[]; running: boolean; current?: number }
+type TrayState = { cards: Card[]; running: boolean; canRepeat: boolean; current?: number }
 
 const looks: Record<Card, { name: string; icon: string }> = {
   forward: { name: 'Avançar', icon: '⬆️' },
   'turn-left': { name: 'Virar à esquerda', icon: '↩️' },
   'turn-right': { name: 'Virar à direita', icon: '↪️' },
+  repeat: { name: 'Repetir ×3', icon: '🔁' },
 }
 
 export class CardTray {
@@ -44,7 +45,7 @@ export class CardTray {
     this.clearButton.addEventListener('click', handlers.onClear)
   }
 
-  show({ cards, running, current }: TrayState) {
+  show({ cards, running, canRepeat, current }: TrayState) {
     this.queue.innerHTML = cards
       .map(
         (card, index) =>
@@ -53,6 +54,6 @@ export class CardTray {
       .join('')
     this.runButton.disabled = running || cards.length === 0
     this.clearButton.disabled = running || cards.length === 0
-    for (const button of this.cardButtons) button.disabled = running
+    for (const button of this.cardButtons) button.disabled = running || (button.dataset.card === 'repeat' && !canRepeat)
   }
 }

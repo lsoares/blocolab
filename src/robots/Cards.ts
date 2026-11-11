@@ -1,24 +1,34 @@
 import { type Side, stepFrom } from '../stage/Grid.ts'
 import type { Course, Pose } from './Course.ts'
 
-export type Card = 'forward' | 'turn-left' | 'turn-right'
+export type Card = 'forward' | 'turn-left' | 'turn-right' | 'repeat'
 
-export type Run = { poses: Pose[]; outcome: 'reached-star' | 'bumped' | 'ended-short' }
+export type Run = { poses: Pose[]; cardOfStep: number[]; outcome: 'reached-star' | 'bumped' | 'ended-short' }
 
 export function followCards(course: Course, cards: Card[]): Run {
   const poses = [course.start]
-  for (const card of cards) {
+  const cardOfStep: number[] = []
+  for (const { card, index } of listSteps(cards)) {
+    cardOfStep.push(index)
     const { spot, heading } = poses[poses.length - 1]
     if (card !== 'forward') {
       poses.push({ spot, heading: turned(heading, card) })
       continue
     }
     const ahead = stepFrom(spot, heading)
-    if (isBlocked(course, ahead)) return { poses: [...poses, { spot, heading }], outcome: 'bumped' }
+    if (isBlocked(course, ahead)) return { poses: [...poses, { spot, heading }], cardOfStep, outcome: 'bumped' }
     poses.push({ spot: ahead, heading })
-    if (ahead.x === course.star.x && ahead.z === course.star.z) return { poses, outcome: 'reached-star' }
+    if (ahead.x === course.star.x && ahead.z === course.star.z) return { poses, cardOfStep, outcome: 'reached-star' }
   }
-  return { poses, outcome: 'ended-short' }
+  return { poses, cardOfStep, outcome: 'ended-short' }
+}
+
+function listSteps(cards: Card[]) {
+  return cards.flatMap((card, index) => {
+    if (card !== 'repeat') return [{ card, index }]
+    const before = cards[index - 1]
+    return before === undefined || before === 'repeat' ? [] : [before, before].map((again) => ({ card: again, index }))
+  })
 }
 
 function turned(heading: Side, card: 'turn-left' | 'turn-right'): Side {

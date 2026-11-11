@@ -405,6 +405,8 @@ fila por baixo do tabuleiro; ▶ Executar faz o robô andar carta a carta até �
 do tabuleiro fazem-no bater. Seis desafios (reta, virar, contornar, esquerda, meia-volta, entre
 pedras). Desfazer tira a última carta; Limpar esvazia a fila.
 
-- Ideias a seguir: repetir (cartas "×3" para os mais velhos), funções/blocos próprios,
+- **Repetir ×3**: a carta 🔁 faz a carta anterior correr três vezes no total (só se oferece depois
+  de uma carta); dois desafios novos a usam.
+- Ideias a seguir: blocos próprios (funções),
   limite de cartas ("chega lá com 5"), mais objetos (chaves e portas, botões que ligam
   circuitos do outro jogo), ligar o robô aos circuitos (o robô acende a lâmpada).
