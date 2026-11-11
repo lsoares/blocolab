@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import type { Board, Piece } from '../loops/Board.ts'
 import { BoardStage } from '../stage/BoardStage.ts'
 import type { BoardSize, Side, Spot } from '../stage/Grid.ts'
 import {
@@ -10,7 +11,6 @@ import {
   showAsGhost,
   standingCylinder,
 } from '../stage/Parts.ts'
-import type { Board, Piece } from './Board.ts'
 
 export class BoardView {
   private readonly stage: BoardStage

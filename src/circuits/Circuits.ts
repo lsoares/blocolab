@@ -1,10 +1,11 @@
 import type { Game, GameSession } from '../Game.ts'
+import { Board, type Piece } from '../loops/Board.ts'
+import { isMet } from '../loops/Challenge.ts'
+import { Placing, type Tool } from '../loops/Placing.ts'
 import { measureBoardThatFits } from '../stage/BoardCamera.ts'
-import { Board, type Piece } from './Board.ts'
 import { BoardView } from './BoardView.ts'
 import { BuzzerSound } from './BuzzerSound.ts'
-import { challenges, isMet } from './Challenges.ts'
-import { Placing, type Tool } from './Placing.ts'
+import { challenges } from './Challenges.ts'
 
 export const circuits: Game = {
   id: 'circuitos',

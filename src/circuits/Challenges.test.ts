@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
-import { Board, type Piece } from './Board.ts'
-import { challenges, isMet } from './Challenges.ts'
+import { Board, type Piece } from '../loops/Board.ts'
+import { isMet } from '../loops/Challenge.ts'
+import { challenges } from './Challenges.ts'
 
 describe('Challenges', () => {
   test('an empty board does not meet the first challenge', () => {

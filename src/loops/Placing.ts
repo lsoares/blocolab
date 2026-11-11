@@ -1,6 +1,12 @@
 import type { Axis, Spot } from '../stage/Grid.ts'
 import type { Board, Piece } from './Board.ts'
-import type { BoardView } from './BoardView.ts'
+
+export type LoopView = {
+  showPlacementGhost(piece: Piece): void
+  showErasureGhost(spot: Spot): void
+  hideGhost(): void
+  pickSpot(pointer: PointerEvent): Spot | undefined
+}
 
 export type Tool = Piece['kind'] | 'eraser'
 
@@ -15,7 +21,7 @@ export class Placing {
 
   constructor(
     private readonly board: Board,
-    private readonly view: BoardView,
+    private readonly view: LoopView,
     private readonly onBoardChanged: () => void,
   ) {
     this.cursor = { x: Math.floor(board.size.columns / 2), z: Math.floor(board.size.rows / 2) }
