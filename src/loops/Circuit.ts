@@ -1,7 +1,12 @@
 import { opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
 import type { Piece } from './Board.ts'
 
-export type CircuitState = { short: boolean; powered: Spot[]; strengths: { spot: Spot; strength: number }[] }
+export type CircuitState = {
+  short: boolean
+  powered: Spot[]
+  strengths: { spot: Spot; strength: number }[]
+  live: Spot[]
+}
 
 export function analyzeCircuit(pieces: Piece[]): CircuitState {
   const pieceAt = indexBySpot(pieces)
@@ -26,17 +31,24 @@ export function analyzeCircuit(pieces: Piece[]): CircuitState {
       return { piece, from: nodes.find(terminalOf(piece, first)), to: nodes.find(terminalOf(piece, second)) }
     })
   if (branches.some(({ piece, from, to }) => piece.kind === 'battery' && from === to)) {
-    return { short: true, powered: [], strengths: [] }
+    return { short: true, powered: [], strengths: [], live: [] }
   }
 
-  const powered = findBlocks(branches.filter(({ from, to }) => from !== to))
-    .filter((block) => block.some(({ piece }) => piece.kind === 'battery'))
-    .flat()
-    .map(({ piece }) => piece.spot)
+  const closedLoops = findBlocks(branches.filter(({ from, to }) => from !== to)).filter((block) =>
+    block.some(({ piece }) => piece.kind === 'battery'),
+  )
+  const powered = closedLoops.flat().map(({ piece }) => piece.spot)
+  const loopNodes = new Set(
+    closedLoops.filter((loop) => loop.length > 1).flatMap((loop) => loop.flatMap(({ from, to }) => [from, to])),
+  )
+  const live = pieces
+    .filter((piece) => piece.kind === 'wire' || (piece.kind === 'switch' && piece.closed))
+    .filter((piece) => loopNodes.has(nodes.find(terminalOf(piece, terminalSidesOf(piece)[0]))))
+    .map(({ spot }) => spot)
   const strengths = measureStrengths(branches).filter(({ spot }) =>
     powered.some((working) => working.x === spot.x && working.z === spot.z),
   )
-  return { short: false, powered, strengths }
+  return { short: false, powered, strengths, live }
 }
 
 export function turnToMeetNeighbours(pieces: Piece[]): Piece[] {

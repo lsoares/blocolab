@@ -94,6 +94,10 @@ export class Board {
     return found?.strength ?? 0
   }
 
+  isLiveAt(spot: Spot) {
+    return this.measureCircuit().live.some((live) => live.x === spot.x && live.z === spot.z)
+  }
+
   hasShortCircuit() {
     return this.measureCircuit().short
   }

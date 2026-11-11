@@ -426,3 +426,50 @@ describe('Strength of the current', () => {
     assert.ok(Math.abs(strength - 1) < 0.02, `strength was ${strength}`)
   })
 })
+
+describe('Wires that carry current', () => {
+  test('the wires of a closed loop carry current', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w.w', 'wLw'])
+
+    const live = board.isLiveAt({ x: 0, z: 1 })
+
+    assert.equal(live, true)
+  })
+
+  test('the wires of a loop with a gap carry nothing', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'w..', 'wLw'])
+
+    const live = board.isLiveAt({ x: 0, z: 1 })
+
+    assert.equal(live, false)
+  })
+
+  test('wires apart from the loop carry nothing', () => {
+    const board = new Board({ columns: 8, rows: 4 })
+    draw(board, ['wBw.ww', 'w.w...', 'wLw...'])
+
+    const live = board.isLiveAt({ x: 4, z: 0 })
+
+    assert.equal(live, false)
+  })
+
+  test('a closed switch in a working loop carries current', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'c.w', 'wLw'])
+
+    const live = board.isLiveAt({ x: 0, z: 1 })
+
+    assert.equal(live, true)
+  })
+
+  test('nothing carries current during a short circuit', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw', 'www'])
+
+    const live = board.isLiveAt({ x: 0, z: 1 })
+
+    assert.equal(live, false)
+  })
+})
