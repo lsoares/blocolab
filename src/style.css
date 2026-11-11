@@ -19,6 +19,17 @@
   --motor: #7a68c8;
   --buzzer: #2b2f36;
   --go: #237a35;
+  --wood: #d9a066;
+  --rail: #8c5a2b;
+  --rail-dark: #3a2f28;
+  --train: #d94a3f;
+  --train-dark: #a83a31;
+  --station: #c8c2b4;
+  --roof: #8c3b2a;
+  --stone: #9aa0a6;
+  --leaf: #3a8f4b;
+  --signal-red: #d64545;
+  --signal-green: #3a9b4a;
 }
 
 @media (max-height: 48rem) {
@@ -40,6 +51,7 @@
     --battery: #9aa5b1;
     --wire: #5b9bea;
     --buzzer: #aab4c0;
+    --rail-dark: #c9bfb4;
   }
 }
 
@@ -79,6 +91,7 @@ body {
 
   .games {
     padding-bottom: var(--space);
+    border-bottom: 2px solid var(--shadow);
   }
 
   .corrections {
@@ -111,8 +124,7 @@ body {
     text-decoration: none;
   }
 
-  label:has(:checked),
-  a[aria-current="page"] {
+  label:has(:checked) {
     border-color: var(--accent);
     background: var(--control-chosen);
     box-shadow: inset 0 0 0 3px var(--accent);
@@ -141,6 +153,21 @@ body {
     margin: 0;
     opacity: 0;
     cursor: pointer;
+  }
+
+  .games a {
+    width: calc(var(--control-size) * 0.8);
+    height: calc(var(--control-size) * 0.8);
+    font-size: calc(var(--control-size) * 0.4);
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .games a[aria-current="page"] {
+    background: var(--control-chosen);
+    box-shadow: inset 0 -3px 0 var(--accent);
   }
 }
 
