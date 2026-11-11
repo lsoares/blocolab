@@ -1,34 +1,83 @@
-export type Position = { x: number; y: number; z: number }
+export type Spot = { x: number; z: number }
 
-export type WorldSize = { width: number; height: number; depth: number }
+export type Size = { width: number; height: number; depth: number }
+
+export type Facing = 'north' | 'east' | 'south' | 'west'
+
+export type Block =
+  | { kind: 'cube'; origin: Spot; size: Size }
+  | { kind: 'ramp'; origin: Spot; size: Size; facing: Facing }
 
 export class World {
-  readonly size: WorldSize
-  private readonly cubes = new Map<string, Position>()
+  readonly size: Size
+  private blocks: Block[] = []
+  private readonly undoable: Block[][] = []
+  private stroke: 'none' | 'unchanged' | 'changed' = 'none'
 
-  constructor(size: WorldSize) {
+  constructor(size: Size) {
     this.size = size
   }
 
-  placeCube(position: Position) {
-    if (!this.isInside(position)) return
-    this.cubes.set(keyOf(position), position)
+  placeBlock(block: Block) {
+    if (!this.fits(block)) return
+    this.change([...this.blocks.filter((placed) => !overlaps(placed, block)), block])
   }
 
-  eraseCube(position: Position) {
-    this.cubes.delete(keyOf(position))
+  eraseBlockAt(spot: Spot) {
+    const block = this.findBlockAt(spot)
+    if (!block) return
+    this.change(this.blocks.filter((placed) => placed !== block))
   }
 
-  listCubes() {
-    return [...this.cubes.values()]
+  startStroke() {
+    this.stroke = 'unchanged'
   }
 
-  isInside({ x, y, z }: Position) {
-    const { width, height, depth } = this.size
-    return x >= 0 && x < width && y >= 0 && y < height && z >= 0 && z < depth
+  endStroke() {
+    this.stroke = 'none'
+  }
+
+  undo() {
+    const previous = this.undoable.pop()
+    if (previous) this.blocks = previous
+  }
+
+  canUndo() {
+    return this.undoable.length > 0
+  }
+
+  findBlockAt(spot: Spot) {
+    return this.blocks.find((block) => overlaps(block, { origin: spot, size: { width: 1, height: 1, depth: 1 } }))
+  }
+
+  listBlocks() {
+    return [...this.blocks]
+  }
+
+  isInside({ x, z }: Spot) {
+    return x >= 0 && x < this.size.width && z >= 0 && z < this.size.depth
+  }
+
+  private fits({ origin, size }: Block) {
+    return (
+      this.isInside(origin) &&
+      this.isInside({ x: origin.x + size.width - 1, z: origin.z + size.depth - 1 }) &&
+      size.height <= this.size.height
+    )
+  }
+
+  private change(blocks: Block[]) {
+    if (this.stroke !== 'changed') this.undoable.push(this.blocks)
+    if (this.stroke === 'unchanged') this.stroke = 'changed'
+    this.blocks = blocks
   }
 }
 
-function keyOf({ x, y, z }: Position) {
-  return `${x},${y},${z}`
+function overlaps(a: Pick<Block, 'origin' | 'size'>, b: Pick<Block, 'origin' | 'size'>) {
+  return (
+    a.origin.x < b.origin.x + b.size.width &&
+    b.origin.x < a.origin.x + a.size.width &&
+    a.origin.z < b.origin.z + b.size.depth &&
+    b.origin.z < a.origin.z + a.size.depth
+  )
 }

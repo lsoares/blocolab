@@ -1,88 +1,142 @@
-import type { Position, World } from './World.ts'
-import type { Pick, WorldView } from './WorldView.ts'
+import type { Block, Facing, Spot, World } from './World.ts'
+import type { WorldView } from './WorldView.ts'
 
-export type Tool = 'brush' | 'eraser'
+export type Shape = { kind: Block['kind']; height: number }
 
 export class Painting {
-  private tool = tools.brush
-  private strokeLevel?: number
-  private cursor: Position
+  private tool: Shape | 'eraser' = { kind: 'cube', height: 1 }
+  private gesture: 'none' | 'drawing' | 'erasing' = 'none'
+  private drawingFrom: Spot = { x: 0, z: 0 }
+  private cursor: Spot
 
   constructor(
     private readonly world: World,
     private readonly view: WorldView,
     private readonly onWorldChanged: () => void,
   ) {
-    this.cursor = { x: Math.floor(world.size.width / 2), y: 0, z: Math.floor(world.size.depth / 2) }
+    this.cursor = { x: Math.floor(world.size.width / 2), z: Math.floor(world.size.depth / 2) }
   }
 
-  chooseTool(tool: Tool) {
-    this.tool = tools[tool]
+  chooseShape(shape: Shape) {
+    this.tool = shape
+    this.view.hideGhost()
+  }
+
+  chooseEraser() {
+    this.tool = 'eraser'
     this.view.hideGhost()
   }
 
   listenTo(canvas: HTMLCanvasElement) {
-    canvas.addEventListener('pointerdown', (event) => this.startStroke(event, canvas))
-    canvas.addEventListener('pointermove', (event) => this.continueStroke(event))
-    canvas.addEventListener('pointerup', () => this.endStroke())
-    canvas.addEventListener('pointercancel', () => this.endStroke())
+    canvas.addEventListener('pointerdown', (event) => this.press(event, canvas))
+    canvas.addEventListener('pointermove', (event) => this.move(event))
+    canvas.addEventListener('pointerup', (event) => this.release(event))
+    canvas.addEventListener('pointercancel', () => this.cancel())
     canvas.addEventListener('pointerleave', () => this.view.hideGhost())
     canvas.addEventListener('keydown', (event) => this.pressKey(event))
-    canvas.addEventListener('focus', () => this.tool.preview(this.view, this.cursor))
+    canvas.addEventListener('focus', () => this.preview(this.cursor))
     canvas.addEventListener('blur', () => this.view.hideGhost())
+  }
+
+  private press(event: PointerEvent, canvas: HTMLCanvasElement) {
+    if (!event.isPrimary || event.button !== 0) return
+    const spot = this.findSpot(event)
+    if (!spot) return
+    canvas.setPointerCapture(event.pointerId)
+    if (this.tool === 'eraser') return this.startErasing(spot)
+    this.gesture = 'drawing'
+    this.drawingFrom = spot
+    this.view.showPlacementGhost(this.draw(this.tool, spot))
+  }
+
+  private move(event: PointerEvent) {
+    if (!event.isPrimary) return
+    const spot = this.findSpot(event)
+    if (!spot) return
+    if (this.gesture === 'erasing') return this.erase(spot)
+    if (this.gesture === 'drawing' && this.tool !== 'eraser') this.view.showPlacementGhost(this.draw(this.tool, spot))
+    else this.preview(spot)
+  }
+
+  private release(event: PointerEvent) {
+    if (!event.isPrimary) return
+    if (this.gesture === 'drawing' && this.tool !== 'eraser')
+      this.placeBlock(this.draw(this.tool, this.findSpot(event) ?? this.drawingFrom))
+    if (this.gesture === 'erasing') this.world.endStroke()
+    this.gesture = 'none'
+  }
+
+  private cancel() {
+    if (this.gesture === 'erasing') this.world.endStroke()
+    this.gesture = 'none'
+    this.view.hideGhost()
+  }
+
+  private startErasing(spot: Spot) {
+    this.gesture = 'erasing'
+    this.world.startStroke()
+    this.erase(spot)
+  }
+
+  private erase(spot: Spot) {
+    this.world.eraseBlockAt(spot)
+    this.onWorldChanged()
+    this.view.hideGhost()
+  }
+
+  private placeBlock(block: Block) {
+    this.world.placeBlock(block)
+    this.onWorldChanged()
+    this.view.hideGhost()
+  }
+
+  private preview(spot: Spot) {
+    const block = this.world.findBlockAt(spot)
+    if (this.tool !== 'eraser') this.view.showPlacementGhost(this.draw(this.tool, spot))
+    else if (block) this.view.showErasureGhost(block)
+    else this.view.hideGhost()
+  }
+
+  private findSpot(event: PointerEvent) {
+    const spot = this.view.pickSpot(event)
+    return spot && this.world.isInside(spot) ? spot : undefined
+  }
+
+  private draw(shape: Shape, to: Spot): Block {
+    const from = this.gesture === 'drawing' ? this.drawingFrom : to
+    const origin = { x: Math.min(from.x, to.x), z: Math.min(from.z, to.z) }
+    const size = { width: Math.abs(to.x - from.x) + 1, height: shape.height, depth: Math.abs(to.z - from.z) + 1 }
+    if (shape.kind === 'ramp') return { kind: 'ramp', origin, size, facing: facingOf(from, to) }
+    return { kind: 'cube', origin, size }
   }
 
   private pressKey(event: KeyboardEvent) {
     const step = arrowSteps[event.key]
     if (step) this.moveCursor(step)
-    else if (event.key === 'Enter' || event.key === ' ') this.applyTool(this.cursor)
+    else if (event.key === 'Enter' || event.key === ' ') this.useToolAtCursor()
     else return
     event.preventDefault()
-    this.tool.preview(this.view, this.cursor)
+    this.preview(this.cursor)
   }
 
   private moveCursor(step: Step) {
     const { dx, dz } = turnStep(step, this.view.camera.countQuarterTurns())
-    const next = { ...this.cursor, x: this.cursor.x + dx, z: this.cursor.z + dz }
+    const next = { x: this.cursor.x + dx, z: this.cursor.z + dz }
     if (this.world.isInside(next)) this.cursor = next
   }
 
-  private startStroke(event: PointerEvent, canvas: HTMLCanvasElement) {
-    if (!event.isPrimary || event.button !== 0) return
-    const target = this.findTarget(event)
-    if (!target) return
-    canvas.setPointerCapture(event.pointerId)
-    this.strokeLevel = target.y
-    this.applyTool(target)
-  }
-
-  private continueStroke(event: PointerEvent) {
-    if (!event.isPrimary) return
-    if (this.strokeLevel === undefined) return this.previewTarget(event)
-    const column = this.view.pickColumn(event, this.tool.findSurfaceHeight(this.strokeLevel))
-    if (column) this.applyTool({ ...column, y: this.strokeLevel })
-  }
-
-  private endStroke() {
-    this.strokeLevel = undefined
-  }
-
-  private previewTarget(event: PointerEvent) {
-    const target = this.findTarget(event)
-    if (target) this.tool.preview(this.view, target)
-    else this.view.hideGhost()
-  }
-
-  private findTarget(event: PointerEvent) {
-    const target = this.tool.findTarget(this.view.pick(event))
-    return target && this.world.isInside(target) ? target : undefined
-  }
-
-  private applyTool(target: Position) {
-    this.tool.apply(this.world, target)
+  private useToolAtCursor() {
+    if (this.tool === 'eraser') this.world.eraseBlockAt(this.cursor)
+    else this.world.placeBlock(this.draw(this.tool, this.cursor))
     this.onWorldChanged()
-    this.view.hideGhost()
   }
+}
+
+function facingOf(from: Spot, to: Spot): Facing {
+  const dx = to.x - from.x
+  const dz = to.z - from.z
+  if (Math.abs(dz) > Math.abs(dx)) return dz > 0 ? 'south' : 'north'
+  return dx < 0 ? 'west' : 'east'
 }
 
 type Step = { dx: number; dz: number }
@@ -97,26 +151,4 @@ const arrowSteps: Record<string, Step> = {
 function turnStep(step: Step, quarterTurns: number): Step {
   const turns = ((quarterTurns % 4) + 4) % 4
   return turns === 0 ? step : turnStep({ dx: step.dz, dz: -step.dx }, turns - 1)
-}
-
-type PaintingTool = {
-  findTarget(pick?: Pick): Position | undefined
-  findSurfaceHeight(strokeLevel: number): number
-  apply(world: World, target: Position): void
-  preview(view: WorldView, target: Position): void
-}
-
-const tools: Record<Tool, PaintingTool> = {
-  brush: {
-    findTarget: (pick) => pick?.nextTo,
-    findSurfaceHeight: (strokeLevel) => strokeLevel,
-    apply: (world, target) => world.placeCube(target),
-    preview: (view, target) => view.showPlacementGhost(target),
-  },
-  eraser: {
-    findTarget: (pick) => pick?.cube,
-    findSurfaceHeight: (strokeLevel) => strokeLevel + 1,
-    apply: (world, target) => world.eraseCube(target),
-    preview: (view, target) => view.showErasureGhost(target),
-  },
 }

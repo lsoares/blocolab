@@ -17,10 +17,6 @@ export class IsometricCamera {
     this.targetQuarterTurns -= 1
   }
 
-  rotateCounterClockwise() {
-    this.targetQuarterTurns += 1
-  }
-
   countQuarterTurns() {
     return this.targetQuarterTurns
   }

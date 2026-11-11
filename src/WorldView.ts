@@ -1,10 +1,6 @@
 import * as THREE from 'three'
 import { IsometricCamera } from './IsometricCamera.ts'
-import type { Position, World, WorldSize } from './World.ts'
-
-export type Pick = { cube?: Position; nextTo: Position }
-
-type Column = { x: number; z: number }
+import type { Block, Size, Spot, World } from './World.ts'
 
 export class WorldView {
   readonly camera: IsometricCamera
@@ -13,13 +9,14 @@ export class WorldView {
   private readonly board = new THREE.Group()
   private readonly ground: THREE.Mesh
   private readonly cubes: THREE.InstancedMesh
+  private readonly ramps: THREE.InstancedMesh
   private readonly ghost = createGhost()
   private readonly raycaster = new THREE.Raycaster()
-  private shownCubes: Position[] = []
+  private readonly shownBlocks = new Map<THREE.Object3D, Block[]>()
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    private readonly size: WorldSize,
+    size: Size,
     reducedMotion: MediaQueryList,
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
@@ -30,8 +27,9 @@ export class WorldView {
     this.board.position.set(-size.width / 2, 0, -size.depth / 2)
     this.scene.add(this.board)
     this.ground = createGround(size)
-    this.cubes = createCubes(size)
-    this.board.add(this.ground, createGridLines(size), this.cubes, this.ghost)
+    this.cubes = createBlocks(new THREE.BoxGeometry(1, 1, 1), '#c9925f', size)
+    this.ramps = createBlocks(createRampGeometry(), '#e8b46a', size)
+    this.board.add(this.ground, createGridLines(size), this.cubes, this.ramps, this.ghost)
     this.scene.add(...createLights(size))
 
     new ResizeObserver(() => this.fitToCanvas()).observe(canvas)
@@ -48,54 +46,58 @@ export class WorldView {
   }
 
   show(world: World) {
-    this.shownCubes = world.listCubes()
-    const placement = new THREE.Matrix4()
-    this.shownCubes.forEach(({ x, y, z }, index) => {
-      this.cubes.setMatrixAt(index, placement.makeTranslation(x + 0.5, y + 0.5, z + 0.5))
-      this.cubes.setColorAt(index, colorForLevel(y, this.size.height))
-    })
-    this.cubes.count = this.shownCubes.length
-    this.cubes.instanceMatrix.needsUpdate = true
-    if (this.cubes.instanceColor) this.cubes.instanceColor.needsUpdate = true
-    this.cubes.computeBoundingSphere()
+    const blocks = world.listBlocks()
+    this.showInstances(
+      this.cubes,
+      blocks.filter((block) => block.kind === 'cube'),
+    )
+    this.showInstances(
+      this.ramps,
+      blocks.filter((block) => block.kind === 'ramp'),
+    )
   }
 
-  showPlacementGhost(position: Position) {
-    this.ghost.placement.visible = true
+  showPlacementGhost(block: Block) {
+    this.ghost.cube.visible = block.kind === 'cube'
+    this.ghost.ramp.visible = block.kind === 'ramp'
     this.ghost.erasure.visible = false
-    this.moveGhostTo(position)
+    this.moveGhostOnto(block)
   }
 
-  showErasureGhost(position: Position) {
-    this.ghost.placement.visible = false
+  showErasureGhost(block: Block) {
+    this.ghost.cube.visible = false
+    this.ghost.ramp.visible = false
     this.ghost.erasure.visible = true
-    this.moveGhostTo(position)
+    this.moveGhostOnto(block)
   }
 
   hideGhost() {
     this.ghost.visible = false
   }
 
-  pick(pointer: PointerEvent): Pick | undefined {
+  pickBlock(pointer: PointerEvent): Block | undefined {
     this.aimAt(pointer)
-    const [hit] = this.raycaster.intersectObjects([this.cubes, this.ground], false)
-    if (!hit) return undefined
-    if (hit.object === this.cubes && hit.instanceId !== undefined && hit.face) {
-      const cube = this.shownCubes[hit.instanceId]
-      const { x, y, z } = hit.face.normal
-      return { cube, nextTo: { x: cube.x + x, y: cube.y + y, z: cube.z + z } }
-    }
-    const { x, z } = this.board.worldToLocal(hit.point.clone())
-    return { nextTo: { x: Math.floor(x), y: 0, z: Math.floor(z) } }
+    const [hit] = this.raycaster.intersectObjects([this.cubes, this.ramps, this.ground], false)
+    if (hit?.instanceId === undefined) return undefined
+    return this.shownBlocks.get(hit.object)?.[hit.instanceId]
   }
 
-  pickColumn(pointer: PointerEvent, atHeight: number): Column | undefined {
+  pickSpot(pointer: PointerEvent): Spot | undefined {
     this.aimAt(pointer)
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -atHeight)
-    const point = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3())
-    if (!point) return undefined
-    const { x, z } = this.board.worldToLocal(point)
+    const [hit] = this.raycaster.intersectObjects([this.cubes, this.ramps, this.ground], false)
+    if (!hit) return undefined
+    const { x, z } = this.board.worldToLocal(this.raycaster.ray.at(hit.distance + 0.01, new THREE.Vector3()))
     return { x: Math.floor(x), z: Math.floor(z) }
+  }
+
+  private showInstances(mesh: THREE.InstancedMesh, blocks: Block[]) {
+    this.shownBlocks.set(mesh, blocks)
+    blocks.forEach((block, index) => {
+      mesh.setMatrixAt(index, placementOf(block))
+    })
+    mesh.count = blocks.length
+    mesh.instanceMatrix.needsUpdate = true
+    mesh.computeBoundingSphere()
   }
 
   private aimAt(pointer: PointerEvent) {
@@ -107,8 +109,8 @@ export class WorldView {
     this.raycaster.setFromCamera(screenPoint, this.camera.camera)
   }
 
-  private moveGhostTo({ x, y, z }: Position) {
-    this.ghost.position.set(x + 0.5, y + 0.5, z + 0.5)
+  private moveGhostOnto(block: Block) {
+    this.ghost.matrix.copy(placementOf(block))
     this.ghost.visible = true
   }
 
@@ -119,7 +121,26 @@ export class WorldView {
   }
 }
 
-function createGround({ width, depth }: WorldSize) {
+function placementOf(block: Block) {
+  const { origin, size } = block
+  const center = new THREE.Matrix4().makeTranslation(
+    origin.x + size.width / 2,
+    size.height / 2,
+    origin.z + size.depth / 2,
+  )
+  if (block.kind === 'cube') return center.multiply(new THREE.Matrix4().makeScale(size.width, size.height, size.depth))
+  const runsAlongX = block.facing === 'east' || block.facing === 'west'
+  const turn = { east: 0, north: Math.PI / 2, west: Math.PI, south: -Math.PI / 2 }[block.facing]
+  return center
+    .multiply(new THREE.Matrix4().makeRotationY(turn))
+    .multiply(
+      runsAlongX
+        ? new THREE.Matrix4().makeScale(size.width, size.height, size.depth)
+        : new THREE.Matrix4().makeScale(size.depth, size.height, size.width),
+    )
+}
+
+function createGround({ width, depth }: Size) {
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(width, depth).rotateX(-Math.PI / 2),
     new THREE.MeshLambertMaterial({ color: '#8fd16a' }),
@@ -129,30 +150,35 @@ function createGround({ width, depth }: WorldSize) {
   return ground
 }
 
-function createGridLines({ width, depth }: WorldSize) {
+function createGridLines({ width, depth }: Size) {
   const grid = new THREE.GridHelper(Math.max(width, depth), Math.max(width, depth), '#6fae4f', '#6fae4f')
   grid.position.set(width / 2, 0.01, depth / 2)
   return grid
 }
 
-function createCubes({ width, height, depth }: WorldSize) {
-  const cubes = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshLambertMaterial(),
-    width * height * depth,
-  )
-  cubes.count = 0
-  cubes.castShadow = true
-  cubes.receiveShadow = true
-  return cubes
+function createBlocks(geometry: THREE.BufferGeometry, color: string, { width, height, depth }: Size) {
+  const blocks = new THREE.InstancedMesh(geometry, new THREE.MeshLambertMaterial({ color }), width * height * depth)
+  blocks.count = 0
+  blocks.castShadow = true
+  blocks.receiveShadow = true
+  return blocks
+}
+
+function createRampGeometry() {
+  const side = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)])
+  return new THREE.ExtrudeGeometry(side, { depth: 1, bevelEnabled: false }).translate(-0.5, -0.5, -0.5)
 }
 
 function createGhost() {
+  const placementLook = new THREE.MeshBasicMaterial({
+    color: '#ffffff',
+    transparent: true,
+    opacity: 0.45,
+    depthWrite: false,
+  })
   const box = new THREE.BoxGeometry(1.02, 1.02, 1.02)
-  const placement = new THREE.Mesh(
-    box,
-    new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.45, depthWrite: false }),
-  )
+  const cube = new THREE.Mesh(box, placementLook)
+  const ramp = new THREE.Mesh(createRampGeometry().scale(1.02, 1.02, 1.02), placementLook)
   const erasure = new THREE.Group().add(
     new THREE.Mesh(
       box,
@@ -161,7 +187,8 @@ function createGhost() {
     new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: '#7a0000' })),
     createCross(),
   )
-  const ghost = Object.assign(new THREE.Group().add(placement, erasure), { placement, erasure })
+  const ghost = Object.assign(new THREE.Group().add(cube, ramp, erasure), { cube, ramp, erasure })
+  ghost.matrixAutoUpdate = false
   ghost.visible = false
   return ghost
 }
@@ -177,7 +204,7 @@ function createCross() {
   )
 }
 
-function createLights({ width, depth }: WorldSize) {
+function createLights({ width, depth }: Size) {
   const sun = new THREE.DirectionalLight('#ffffff', 2)
   sun.position.set(width * 0.4, 40, depth * 0.7)
   sun.castShadow = true
@@ -185,8 +212,4 @@ function createLights({ width, depth }: WorldSize) {
   const reach = Math.max(width, depth)
   Object.assign(sun.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, far: 120 })
   return [new THREE.HemisphereLight('#ffffff', '#7a9a6a', 1.6), sun]
-}
-
-function colorForLevel(level: number, height: number) {
-  return new THREE.Color().setHSL(0.08 - (level / height) * 0.08, 0.55, 0.45 + (level / height) * 0.35)
 }
