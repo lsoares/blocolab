@@ -19,8 +19,8 @@ export class World {
   }
 
   placeBlock(block: Block) {
-    if (!this.fits(block)) return
-    this.change([...this.blocks.filter((placed) => !overlaps(placed, block)), block])
+    if (!this.fits(block) || this.blocks.some((placed) => overlaps(placed, block))) return
+    this.change([...this.blocks, block])
   }
 
   eraseBlockAt(spot: Spot) {

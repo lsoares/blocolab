@@ -28,16 +28,14 @@ describe('Placing blocks', () => {
     ])
   })
 
-  test('drawing over blocks replaces them', () => {
+  test('a block cannot be drawn over another one', () => {
     const world = new World({ width: 8, height: 3, depth: 8 })
     world.placeBlock({ kind: 'cube', origin: { x: 0, z: 0 }, size: { width: 3, height: 1, depth: 3 } })
-    world.placeBlock({ kind: 'cube', origin: { x: 6, z: 6 }, size: { width: 1, height: 1, depth: 1 } })
 
     world.placeBlock({ kind: 'ramp', origin: { x: 2, z: 2 }, size: { width: 2, height: 3, depth: 2 }, facing: 'south' })
 
     assert.deepEqual(world.listBlocks(), [
-      { kind: 'cube', origin: { x: 6, z: 6 }, size: { width: 1, height: 1, depth: 1 } },
-      { kind: 'ramp', origin: { x: 2, z: 2 }, size: { width: 2, height: 3, depth: 2 }, facing: 'south' },
+      { kind: 'cube', origin: { x: 0, z: 0 }, size: { width: 3, height: 1, depth: 3 } },
     ])
   })
 

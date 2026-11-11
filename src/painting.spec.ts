@@ -82,12 +82,12 @@ test('Enter with the eraser removes the block under the keyboard cursor', async 
   await expect(page.getByRole('status')).toHaveText('0 blocos')
 })
 
-test('drawing over a block replaces it', async ({ page }) => {
+test('drawing over a block keeps the block that was there', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('application', { name: 'Mundo' }).click()
   await page.getByRole('radio', { name: 'Rampa alta' }).check()
 
   await page.getByRole('application', { name: 'Mundo' }).click()
 
-  await expect(page.getByRole('status')).toHaveText('1 rampa')
+  await expect(page.getByRole('status')).toHaveText('1 cubo')
 })
