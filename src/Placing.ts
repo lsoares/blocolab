@@ -40,7 +40,7 @@ export class Placing {
     if (!spot) return
     canvas.setPointerCapture(event.pointerId)
     if (this.tool === 'eraser') return this.startErasing(spot)
-    if (this.board.findPieceAt(spot)?.kind === 'switch') return this.toggleSwitch(spot)
+    if (this.isTappingASwitchWithTheSwitch(spot)) return this.toggleSwitch(spot)
     this.gesture = 'drawing'
     this.drawingFrom = spot
     this.preview(spot, spot, 'horizontal')
@@ -94,8 +94,12 @@ export class Placing {
     this.view.hideGhost()
   }
 
+  private isTappingASwitchWithTheSwitch(spot: Spot) {
+    return this.tool === 'switch' && this.board.findPieceAt(spot)?.kind === 'switch'
+  }
+
   private preview(from: Spot, to: Spot, tapAxis: Axis) {
-    if (this.board.findPieceAt(to)?.kind === 'switch' && from === to) return this.view.hideGhost()
+    if (from === to && this.isTappingASwitchWithTheSwitch(to)) return this.view.hideGhost()
     const pieces = this.planPieces(from, to, tapAxis)
     if (pieces.length > 0) return this.view.showPlacementGhost(pieces, false)
     this.view.showPlacementGhost(this.planPieces(from, to, tapAxis, true), true)
@@ -110,8 +114,9 @@ export class Placing {
     if (this.tool === 'eraser') return []
     const axis = from.x === to.x && from.z === to.z ? tapAxis : runAxisOf(from, to)
     const spots = this.tool === 'wire' ? runBetween(from, to, axis) : [from]
+    const isRun = spots.length > 1
     return spots
-      .filter((spot) => ignoringRoom || this.board.hasRoomFor(spot))
+      .filter((spot) => ignoringRoom || !isRun || this.board.hasRoomFor(spot))
       .map((spot) => this.buildPiece(spot, axis))
   }
 
@@ -144,7 +149,7 @@ export class Placing {
 
   private useToolAtCursor() {
     if (this.tool === 'eraser') this.board.eraseAt(this.cursor)
-    else if (this.board.findPieceAt(this.cursor)?.kind === 'switch') this.board.toggleSwitchAt(this.cursor)
+    else if (this.isTappingASwitchWithTheSwitch(this.cursor)) this.board.toggleSwitchAt(this.cursor)
     else for (const piece of this.planPieces(this.cursor, this.cursor, this.cursorAxis)) this.board.placePiece(piece)
     this.onBoardChanged()
   }

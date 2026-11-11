@@ -37,6 +37,15 @@ export function analyzeCircuit(pieces: Piece[]): CircuitState {
   return { short: false, powered }
 }
 
+export function turnToMeetNeighbours(pieces: Piece[]): Piece[] {
+  let turned = pieces
+  for (let pass = 0; pass < 3; pass++) {
+    const pieceAt = indexBySpot(turned)
+    turned = turned.map((piece) => turnIfNothingMeetsIt(piece, pieceAt))
+  }
+  return turned
+}
+
 export function findLinkedSides(pieces: Piece[], spot: Spot): Side[] {
   const pieceAt = indexBySpot(pieces)
   const here = pieceAt.get(keyOf(spot))
@@ -45,6 +54,19 @@ export function findLinkedSides(pieces: Piece[], spot: Spot): Side[] {
     const next = pieceAt.get(keyOf(stepFrom(spot, side)))
     return next !== undefined && terminalSidesOf(next).includes(opposite[side])
   })
+}
+
+function turnIfNothingMeetsIt(piece: Piece, pieceAt: Map<string, Piece>): Piece {
+  if (piece.kind === 'wire') return piece
+  const turned = { ...piece, axis: piece.axis === 'horizontal' ? 'vertical' : 'horizontal' } as Piece
+  return countLinks(piece, pieceAt) === 0 && countLinks(turned, pieceAt) > 0 ? turned : piece
+}
+
+function countLinks(piece: Piece, pieceAt: Map<string, Piece>) {
+  return terminalSidesOf(piece).filter((side) => {
+    const next = pieceAt.get(keyOf(stepFrom(piece.spot, side)))
+    return next !== undefined && terminalSidesOf(next).includes(opposite[side])
+  }).length
 }
 
 type Branch = { piece: Piece; from: string; to: string }

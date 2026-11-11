@@ -11,11 +11,20 @@ describe('Placing pieces', () => {
     assert.deepEqual(board.listPieces(), [{ kind: 'lamp', spot: { x: 2, z: 1 }, axis: 'vertical' }])
   })
 
-  test('a spot holds only one piece', () => {
+  test('placing on an occupied spot replaces the piece', () => {
     const board = new Board({ columns: 6, rows: 4 })
     board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
 
     board.placePiece({ kind: 'lamp', spot: { x: 2, z: 1 }, axis: 'horizontal' })
+
+    assert.deepEqual(board.listPieces(), [{ kind: 'lamp', spot: { x: 2, z: 1 }, axis: 'horizontal' }])
+  })
+
+  test('placing the same piece again leaves a single piece', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
+
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
 
     assert.deepEqual(board.listPieces(), [{ kind: 'wire', spot: { x: 2, z: 1 } }])
   })
@@ -101,6 +110,26 @@ describe('Undo', () => {
     assert.deepEqual(board.listPieces(), [{ kind: 'switch', spot: { x: 1, z: 1 }, axis: 'horizontal', closed: false }])
   })
 
+  test('undo brings back the piece that was replaced', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
+    board.placePiece({ kind: 'lamp', spot: { x: 2, z: 1 }, axis: 'horizontal' })
+
+    board.undo()
+
+    assert.deepEqual(board.listPieces(), [{ kind: 'wire', spot: { x: 2, z: 1 } }])
+  })
+
+  test('placing the same piece again leaves nothing extra to undo', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
+
+    board.undo()
+
+    assert.deepEqual(board.listPieces(), [])
+  })
+
   test('a stroke that changes nothing leaves nothing to undo', () => {
     const board = new Board({ columns: 6, rows: 4 })
     board.startStroke()
@@ -177,13 +206,13 @@ describe('Circuits', () => {
     assert.equal(sounding, true)
   })
 
-  test('a lamp turned sideways does not join the loop', () => {
+  test('a lamp placed sideways turns to join the loop', () => {
     const board = new Board({ columns: 6, rows: 4 })
     draw(board, ['wBw', 'w.w', 'wlw'])
 
     const lit = board.isPoweredAt({ x: 1, z: 2 })
 
-    assert.equal(lit, false)
+    assert.equal(lit, true)
   })
 
   test('a wire straight across the battery is a short circuit', () => {
@@ -225,13 +254,51 @@ describe('Wire links', () => {
     assert.deepEqual(sides, ['east', 'south'])
   })
 
-  test('a wire does not link to a piece turned sideways', () => {
+  test('a piece placed sideways turns to meet the wire beside it', () => {
     const board = new Board({ columns: 6, rows: 4 })
     draw(board, ['wb'])
 
     const sides = board.listLinkedSides({ x: 0, z: 0 })
 
-    assert.deepEqual(sides, [])
+    assert.deepEqual(sides, ['east'])
+  })
+})
+
+describe('Pieces turning by themselves', () => {
+  test('a battery turns to meet the wires above and below it', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'battery', spot: { x: 1, z: 1 }, axis: 'horizontal' })
+
+    board.placePiece({ kind: 'wire', spot: { x: 1, z: 0 } })
+    board.placePiece({ kind: 'wire', spot: { x: 1, z: 2 } })
+
+    assert.deepEqual(board.findPieceAt({ x: 1, z: 1 }), { kind: 'battery', spot: { x: 1, z: 1 }, axis: 'vertical' })
+  })
+
+  test('a lamp turns to meet a wire placed beside it', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    board.placePiece({ kind: 'lamp', spot: { x: 1, z: 1 }, axis: 'vertical' })
+
+    board.placePiece({ kind: 'wire', spot: { x: 2, z: 1 } })
+
+    assert.deepEqual(board.findPieceAt({ x: 1, z: 1 }), { kind: 'lamp', spot: { x: 1, z: 1 }, axis: 'horizontal' })
+  })
+
+  test('a piece that already meets a wire keeps its way', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+    draw(board, ['wBw'])
+
+    board.placePiece({ kind: 'wire', spot: { x: 1, z: 1 } })
+
+    assert.deepEqual(board.findPieceAt({ x: 1, z: 0 }), { kind: 'battery', spot: { x: 1, z: 0 }, axis: 'horizontal' })
+  })
+
+  test('a piece with nothing around it keeps the way it was placed', () => {
+    const board = new Board({ columns: 6, rows: 4 })
+
+    board.placePiece({ kind: 'lamp', spot: { x: 1, z: 1 }, axis: 'vertical' })
+
+    assert.deepEqual(board.findPieceAt({ x: 1, z: 1 }), { kind: 'lamp', spot: { x: 1, z: 1 }, axis: 'vertical' })
   })
 })
 

@@ -1,4 +1,4 @@
-import { analyzeCircuit, type CircuitState, findLinkedSides, type Side } from './Circuit.ts'
+import { analyzeCircuit, type CircuitState, findLinkedSides, type Side, turnToMeetNeighbours } from './Circuit.ts'
 
 export type Spot = { x: number; z: number }
 
@@ -23,8 +23,10 @@ export class Board {
   }
 
   placePiece(piece: Piece) {
-    if (!this.hasRoomFor(piece.spot)) return
-    this.change([...this.pieces, piece])
+    if (!this.isInside(piece.spot)) return
+    const replaced = this.findPieceAt(piece.spot)
+    if (replaced && isSamePiece(replaced, piece)) return
+    this.change([...this.pieces.filter((placed) => placed !== replaced), piece])
   }
 
   hasRoomFor(spot: Spot) {
@@ -100,7 +102,13 @@ export class Board {
   private change(pieces: Piece[]) {
     if (this.stroke !== 'changed') this.undoable.push(this.pieces)
     if (this.stroke === 'unchanged') this.stroke = 'changed'
-    this.pieces = pieces
+    this.pieces = turnToMeetNeighbours(pieces)
     this.circuit = undefined
   }
+}
+
+function isSamePiece(a: Piece, b: Piece) {
+  if (a.kind !== b.kind) return false
+  if (a.kind === 'wire' || b.kind === 'wire') return true
+  return a.axis === b.axis
 }
