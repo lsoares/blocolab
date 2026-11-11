@@ -67,10 +67,6 @@ export class CircuitPage {
     await this.page.getByRole('radio', { name }).hover()
   }
 
-  getSkipButton() {
-    return this.page.getByRole('button', { name: 'Saltar' })
-  }
-
   getNextChallengeButton() {
     return this.page.getByRole('button', { name: 'Próximo desafio' })
   }

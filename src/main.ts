@@ -18,9 +18,7 @@ function startGame(canvas: HTMLCanvasElement) {
   const undoButton = document.querySelector<HTMLButtonElement>('.undo')
   const panel = document.querySelector<HTMLElement>('.challenge')
   const goal = panel?.querySelector('.goal')
-  const hint = panel?.querySelector('.hint')
   const nextButton = panel?.querySelector<HTMLButtonElement>('.next')
-  const skipButton = panel?.querySelector<HTMLButtonElement>('.skip')
   let level = recallLevel()
   let achieved = false
   const showChallenge = () => {
@@ -28,12 +26,10 @@ function startGame(canvas: HTMLCanvasElement) {
     if (challenge && isMet(board, challenge)) achieved = true
     if (goal) {
       goal.textContent = challenge
-        ? `Desafio ${level + 1} de ${challenges.length}: ${challenge.goal}${achieved ? ' ✓ Conseguiste!' : ''}`
+        ? `${challenge.goal}${achieved ? ' ✓ Conseguiste!' : ''}`
         : 'Fizeste todos os desafios! Agora constrói o que quiseres.'
     }
-    if (hint) hint.textContent = challenge ? `Dica: ${challenge.hint}` : ''
     if (nextButton) nextButton.hidden = !achieved
-    if (skipButton) skipButton.hidden = achieved || !challenge
     panel?.classList.toggle('done', achieved)
   }
   const buzzerSound = new BuzzerSound()
@@ -62,7 +58,6 @@ function startGame(canvas: HTMLCanvasElement) {
     canvas.focus()
   }
   nextButton?.addEventListener('click', goToNextChallenge)
-  skipButton?.addEventListener('click', goToNextChallenge)
 
   const undo = () => {
     board.undo()

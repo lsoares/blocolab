@@ -2,7 +2,6 @@ import type { Board, Piece } from './Board.ts'
 
 export type Challenge = {
   goal: string
-  hint: string
   needs: {
     litLamps?: number
     runningMotors?: number
@@ -19,72 +18,58 @@ export type Challenge = {
 export const challenges: Challenge[] = [
   {
     goal: 'Acende a lâmpada.',
-    hint: 'Liga a pilha à lâmpada com fios, a fazer um anel fechado.',
     needs: { litLamps: 1 },
   },
   {
     goal: 'Faz o motor rodar.',
-    hint: 'O motor também precisa de um anel fechado com a pilha.',
     needs: { runningMotors: 1 },
   },
   {
     goal: 'Faz a campainha tocar.',
-    hint: 'A campainha toca quando o anel fecha.',
     needs: { soundingBuzzers: 1 },
   },
   {
     goal: 'Acende a lâmpada e controla-a com um interruptor.',
-    hint: 'Põe um interruptor no anel e toca nele para ligar e desligar.',
     needs: { litLamps: 1, mainSwitch: true },
   },
   {
     goal: 'Acende duas lâmpadas com uma só pilha.',
-    hint: 'Põe as duas lâmpadas no mesmo anel, uma a seguir à outra.',
     needs: { litLamps: 2, maxBatteries: 1 },
   },
   {
     goal: 'Faz a lâmpada acender e o motor rodar ao mesmo tempo.',
-    hint: 'Podes pôr os dois no mesmo anel.',
     needs: { litLamps: 1, runningMotors: 1 },
   },
   {
     goal: 'Faz a lâmpada acender, o motor rodar e a campainha tocar.',
-    hint: 'Junta os três no mesmo anel e liga tudo de uma vez.',
     needs: { litLamps: 1, runningMotors: 1, soundingBuzzers: 1 },
   },
   {
     goal: 'Acende duas lâmpadas de modo a que, se tirares uma, a outra continue acesa.',
-    hint: 'Liga cada lâmpada à pilha pelo seu caminho, sem uma depender da outra (em paralelo).',
     needs: { litLamps: 2, lampsEachOnTheirOwnPath: true },
   },
   {
     goal: 'Acende duas lâmpadas de modo a que, se tirares uma, a outra se apague.',
-    hint: 'Põe as lâmpadas uma a seguir à outra, no mesmo anel (em série).',
     needs: { litLamps: 2, lampsOneAfterTheOther: true },
   },
   {
     goal: 'Faz dois motores rodar com uma só pilha.',
-    hint: 'Dois motores no mesmo anel, ou cada um pelo seu caminho.',
     needs: { runningMotors: 2, maxBatteries: 1 },
   },
   {
     goal: 'Faz um interruptor geral: a lâmpada, o motor e a campainha ligam e desligam todos com ele.',
-    hint: 'Põe o interruptor no anel que passa pelas três peças e toca nele para desligar tudo.',
     needs: { litLamps: 1, runningMotors: 1, soundingBuzzers: 1, mainSwitch: true },
   },
   {
     goal: 'Faz a lâmpada brilhar mais forte do que com uma só pilha.',
-    hint: 'Duas pilhas uma a seguir à outra empurram a corrente com mais força.',
     needs: { litLamps: 1, everyLampAtLeast: 1.5 },
   },
   {
     goal: 'Acende duas lâmpadas, cada uma tão forte como se estivesse sozinha.',
-    hint: 'Em série as lâmpadas dividem a pilha e ficam fracas. Em paralelo cada uma recebe a pilha toda.',
     needs: { litLamps: 2, everyLampAtLeast: 0.85 },
   },
   {
     goal: 'Faz um curto-circuito de propósito.',
-    hint: 'Liga um fio direto de um lado da pilha ao outro. Vês que nada funciona? Numa pilha a sério isto aquece muito!',
     needs: { shortCircuit: true },
   },
 ]
