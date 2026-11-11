@@ -5,8 +5,10 @@ export type Tool = Piece['kind'] | 'eraser'
 
 export class Placing {
   private tool: Tool = 'battery'
-  private gesture: 'none' | 'drawing' | 'erasing' = 'none'
-  private drawingFrom: Spot = { x: 0, z: 0 }
+  private gesture: 'none' | 'turning' | 'wiring' | 'erasing' = 'none'
+  private gestureStart: Spot = { x: 0, z: 0 }
+  private wiredUpTo: Spot = { x: 0, z: 0 }
+  private wireToReplaceOnRelease?: Spot
   private cursor: Spot
   private cursorAxis: Axis = 'horizontal'
 
@@ -30,7 +32,9 @@ export class Placing {
     canvas.addEventListener('pointercancel', () => this.cancel())
     canvas.addEventListener('pointerleave', () => this.view.hideGhost())
     canvas.addEventListener('keydown', (event) => this.pressKey(event))
-    canvas.addEventListener('focus', () => this.preview(this.cursor, this.cursor, this.cursorAxis))
+    canvas.addEventListener('focus', () => {
+      if (canvas.matches(':focus-visible')) this.previewAt(this.cursor, this.cursorAxis)
+    })
     canvas.addEventListener('blur', () => this.view.hideGhost())
   }
 
@@ -41,9 +45,10 @@ export class Placing {
     canvas.setPointerCapture(event.pointerId)
     if (this.tool === 'eraser') return this.startErasing(spot)
     if (this.isTappingASwitchWithTheSwitch(spot)) return this.toggleSwitch(spot)
-    this.gesture = 'drawing'
-    this.drawingFrom = spot
-    this.preview(spot, spot, 'horizontal')
+    if (this.tool === 'wire') return this.startWiring(spot)
+    this.gesture = 'turning'
+    this.gestureStart = spot
+    this.previewAt(spot, 'horizontal')
   }
 
   private move(event: PointerEvent) {
@@ -51,22 +56,54 @@ export class Placing {
     const spot = this.findSpot(event)
     if (!spot) return
     if (this.gesture === 'erasing') return this.erase(spot)
-    if (this.gesture === 'drawing') return this.preview(this.drawingFrom, spot, 'horizontal')
+    if (this.gesture === 'wiring') return this.extendWire(spot)
+    if (this.gesture === 'turning') return this.previewAt(this.gestureStart, axisOfDrag(this.gestureStart, spot))
     if (this.tool === 'eraser') return this.previewErasure(spot)
-    this.preview(spot, spot, 'horizontal')
+    this.previewAt(spot, 'horizontal')
   }
 
   private release(event: PointerEvent) {
     if (!event.isPrimary) return
-    if (this.gesture === 'drawing') this.place(this.drawingFrom, this.findSpot(event) ?? this.drawingFrom, 'horizontal')
+    if (this.gesture === 'turning')
+      this.placeAt(this.gestureStart, axisOfDrag(this.gestureStart, this.findSpot(event) ?? this.gestureStart))
+    if (this.gesture === 'wiring') this.finishWiring()
     if (this.gesture === 'erasing') this.board.endStroke()
     this.gesture = 'none'
   }
 
   private cancel() {
-    if (this.gesture === 'erasing') this.board.endStroke()
+    if (this.gesture === 'wiring' || this.gesture === 'erasing') this.board.endStroke()
     this.gesture = 'none'
     this.view.hideGhost()
+  }
+
+  private startWiring(spot: Spot) {
+    this.gesture = 'wiring'
+    this.wiredUpTo = spot
+    this.board.startStroke()
+    if (this.board.hasRoomFor(spot)) this.board.placePiece({ kind: 'wire', spot })
+    else this.wireToReplaceOnRelease = spot
+    this.onBoardChanged()
+    this.view.hideGhost()
+  }
+
+  private extendWire(spot: Spot) {
+    if (spot.x === this.wiredUpTo.x && spot.z === this.wiredUpTo.z) return
+    this.wireToReplaceOnRelease = undefined
+    for (const next of pathBetween(this.wiredUpTo, spot)) {
+      if (this.board.hasRoomFor(next)) this.board.placePiece({ kind: 'wire', spot: next })
+    }
+    this.wiredUpTo = spot
+    this.onBoardChanged()
+  }
+
+  private finishWiring() {
+    if (this.wireToReplaceOnRelease) {
+      this.board.placePiece({ kind: 'wire', spot: this.wireToReplaceOnRelease })
+      this.wireToReplaceOnRelease = undefined
+      this.onBoardChanged()
+    }
+    this.board.endStroke()
   }
 
   private startErasing(spot: Spot) {
@@ -86,10 +123,9 @@ export class Placing {
     this.onBoardChanged()
   }
 
-  private place(from: Spot, to: Spot, tapAxis: Axis) {
-    this.board.startStroke()
-    for (const piece of this.planPieces(from, to, tapAxis)) this.board.placePiece(piece)
-    this.board.endStroke()
+  private placeAt(spot: Spot, axis: Axis) {
+    if (this.tool === 'eraser') return
+    this.board.placePiece(buildPiece(this.tool, spot, axis))
     this.onBoardChanged()
     this.view.hideGhost()
   }
@@ -98,32 +134,15 @@ export class Placing {
     return this.tool === 'switch' && this.board.findPieceAt(spot)?.kind === 'switch'
   }
 
-  private preview(from: Spot, to: Spot, tapAxis: Axis) {
-    if (from === to && this.isTappingASwitchWithTheSwitch(to)) return this.view.hideGhost()
-    const pieces = this.planPieces(from, to, tapAxis)
-    if (pieces.length > 0) return this.view.showPlacementGhost(pieces, false)
-    this.view.showPlacementGhost(this.planPieces(from, to, tapAxis, true), true)
+  private previewAt(spot: Spot, axis: Axis) {
+    if (this.tool === 'eraser') return this.previewErasure(spot)
+    if (this.isTappingASwitchWithTheSwitch(spot)) return this.view.hideGhost()
+    this.view.showPlacementGhost(buildPiece(this.tool, spot, axis))
   }
 
   private previewErasure(spot: Spot) {
     if (this.board.findPieceAt(spot)) this.view.showErasureGhost(spot)
     else this.view.hideGhost()
-  }
-
-  private planPieces(from: Spot, to: Spot, tapAxis: Axis, ignoringRoom = false): Piece[] {
-    if (this.tool === 'eraser') return []
-    const axis = from.x === to.x && from.z === to.z ? tapAxis : runAxisOf(from, to)
-    const spots = this.tool === 'wire' ? runBetween(from, to, axis) : [from]
-    const isRun = spots.length > 1
-    return spots
-      .filter((spot) => ignoringRoom || !isRun || this.board.hasRoomFor(spot))
-      .map((spot) => this.buildPiece(spot, axis))
-  }
-
-  private buildPiece(spot: Spot, axis: Axis): Piece {
-    if (this.tool === 'wire' || this.tool === 'eraser') return { kind: 'wire', spot }
-    if (this.tool === 'switch') return { kind: 'switch', spot, axis, closed: false }
-    return { kind: this.tool, spot, axis }
   }
 
   private findSpot(event: PointerEvent) {
@@ -137,8 +156,7 @@ export class Placing {
     else if (event.key === 'Enter' || event.key === ' ') this.useToolAtCursor()
     else return
     event.preventDefault()
-    if (this.tool === 'eraser') this.previewErasure(this.cursor)
-    else this.preview(this.cursor, this.cursor, this.cursorAxis)
+    this.previewAt(this.cursor, this.cursorAxis)
   }
 
   private moveCursor({ dx, dz }: { dx: number; dz: number }) {
@@ -150,7 +168,7 @@ export class Placing {
   private useToolAtCursor() {
     if (this.tool === 'eraser') this.board.eraseAt(this.cursor)
     else if (this.isTappingASwitchWithTheSwitch(this.cursor)) this.board.toggleSwitchAt(this.cursor)
-    else for (const piece of this.planPieces(this.cursor, this.cursor, this.cursorAxis)) this.board.placePiece(piece)
+    else this.board.placePiece(buildPiece(this.tool, this.cursor, this.cursorAxis))
     this.onBoardChanged()
   }
 }
@@ -162,14 +180,27 @@ const arrowSteps: Record<string, { dx: number; dz: number }> = {
   ArrowLeft: { dx: -1, dz: 0 },
 }
 
-function runAxisOf(from: Spot, to: Spot): Axis {
+function buildPiece(kind: Piece['kind'], spot: Spot, axis: Axis): Piece {
+  if (kind === 'wire') return { kind, spot }
+  if (kind === 'switch') return { kind, spot, axis, closed: false }
+  return { kind, spot, axis }
+}
+
+function axisOfDrag(from: Spot, to: Spot): Axis {
   return Math.abs(to.x - from.x) >= Math.abs(to.z - from.z) ? 'horizontal' : 'vertical'
 }
 
-function runBetween(from: Spot, to: Spot, axis: Axis): Spot[] {
-  const length = axis === 'horizontal' ? to.x - from.x : to.z - from.z
-  return Array.from({ length: Math.abs(length) + 1 }, (_, index) => {
-    const step = Math.sign(length) * index
-    return axis === 'horizontal' ? { x: from.x + step, z: from.z } : { x: from.x, z: from.z + step }
-  })
+function pathBetween(from: Spot, to: Spot): Spot[] {
+  const dx = to.x - from.x
+  const dz = to.z - from.z
+  const horizontalFirst = Math.abs(dx) >= Math.abs(dz)
+  const horizontal = Array.from({ length: Math.abs(dx) }, (_, index) => ({
+    x: from.x + Math.sign(dx) * (index + 1),
+    z: horizontalFirst ? from.z : to.z,
+  }))
+  const vertical = Array.from({ length: Math.abs(dz) }, (_, index) => ({
+    x: horizontalFirst ? to.x : from.x,
+    z: from.z + Math.sign(dz) * (index + 1),
+  }))
+  return horizontalFirst ? [...horizontal, ...vertical] : [...vertical, ...horizontal]
 }

@@ -55,16 +55,13 @@ export class BoardView {
     }
   }
 
-  showPlacementGhost(pieces: Piece[], blocked: boolean) {
+  showPlacementGhost(piece: Piece) {
     this.disposeChildrenOf(this.ghost)
-    const look = blocked ? blockedLook : placementLook
-    for (const piece of pieces) {
-      const { model } = createPieceModel(piece, { powered: false, strength: 0, linkedSides: [], stillLife: true })
-      model.traverse((part) => {
-        if (part instanceof THREE.Mesh) Object.assign(part, { material: look, castShadow: false })
-      })
-      this.ghost.add(model)
-    }
+    const { model } = createPieceModel(piece, { powered: false, strength: 0, linkedSides: [], stillLife: true })
+    model.traverse((part) => {
+      if (part instanceof THREE.Mesh) Object.assign(part, { material: placementLook, castShadow: false })
+    })
+    this.ghost.add(model)
   }
 
   showErasureGhost(spot: Spot) {
@@ -120,7 +117,6 @@ export class BoardView {
 type PieceLook = { powered: boolean; strength: number; linkedSides: Side[]; stillLife: boolean }
 
 const placementLook = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55 })
-const blockedLook = new THREE.MeshBasicMaterial({ color: '#ff3b3b', transparent: true, opacity: 0.65 })
 const erasureLook = new THREE.MeshBasicMaterial({ color: '#ff4d4d', transparent: true, opacity: 0.35 })
 
 const paints = new Map<string, THREE.MeshLambertMaterial>()

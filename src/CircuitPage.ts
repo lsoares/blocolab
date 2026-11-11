@@ -32,6 +32,28 @@ export class CircuitPage {
     return this.page.getByRole('region', { name: 'Desafio' })
   }
 
+  async pressBoardAt(columnsAside: number, rowsAside: number) {
+    await this.moveMouseOnBoard(columnsAside, rowsAside)
+    await this.page.mouse.down()
+  }
+
+  async dragBoardTo(columnsAside: number, rowsAside: number) {
+    await this.moveMouseOnBoard(columnsAside, rowsAside)
+  }
+
+  async releaseBoard() {
+    await this.page.mouse.up()
+  }
+
+  private async moveMouseOnBoard(columnsAside: number, rowsAside: number) {
+    const box = await this.getBoard().boundingBox()
+    await this.page.mouse.move(
+      (box?.x ?? 0) + (box?.width ?? 0) / 2 + columnsAside,
+      (box?.y ?? 0) + (box?.height ?? 0) / 2 + rowsAside,
+      { steps: 8 },
+    )
+  }
+
   getPieceName() {
     return this.page.getByRole('tooltip')
   }
