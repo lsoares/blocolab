@@ -22,6 +22,8 @@
   --wood: #d9a066;
   --rail: #8c5a2b;
   --water: #3b8fd6;
+  --steel: #7d96ab;
+  --pump: #3a6ea5;
   --rail-dark: #3a2f28;
   --train: #d94a3f;
   --train-dark: #a83a31;
@@ -310,4 +312,10 @@ main {
 
 .piece-name.beside {
   transform: translateY(-50%);
+}
+
+@media (max-width: 30rem) {
+  .app-bar .app-name {
+    display: none;
+  }
 }

@@ -2,8 +2,9 @@ import './style.css'
 import { circuits } from './circuits/Circuits.ts'
 import type { Game, GameSession } from './Game.ts'
 import { trains } from './trains/Trains.ts'
+import { waters } from './waters/Waters.ts'
 
-const games: Game[] = [circuits, trains]
+const games: Game[] = [circuits, waters, trains]
 const game = games.find(({ id }) => `#${id}` === location.hash) ?? games[0]
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
