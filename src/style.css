@@ -12,6 +12,9 @@
   --block-top: #e2b98b;
   --block-side: #b07a48;
   --block-shade: #8a5a30;
+  --ball: #e8453c;
+  --go: #2f9e44;
+  --halt: #c92a2a;
 }
 
 @media (max-height: 48rem) {
@@ -79,6 +82,30 @@ body {
   border: none;
 }
 
+.run {
+  position: absolute;
+  top: calc(var(--space) * 2);
+  right: calc(var(--space) * 2);
+  width: calc(var(--control-size) * 1.3);
+  height: calc(var(--control-size) * 1.3);
+  font-size: calc(var(--control-size) / 1.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  background: var(--go);
+  box-shadow: 0 2px 6px var(--shadow);
+  cursor: pointer;
+
+  &[aria-label="Parar"] {
+    background: var(--halt);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+}
+
 .toolbar,
 .camera {
   label,
@@ -109,6 +136,11 @@ body {
   button:focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
+  }
+
+  fieldset:disabled label {
+    opacity: 0.4;
+    cursor: default;
   }
 
   button:disabled {

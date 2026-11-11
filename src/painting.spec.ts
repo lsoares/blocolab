@@ -103,3 +103,29 @@ test('drawing on top of a block keeps the block that was there', async ({ page }
 
   await expect(page.getByRole('status')).toHaveText('1 cubo')
 })
+
+test('tapping with the ball places a ball', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('radio', { name: 'Bola' }).check()
+
+  await page.getByRole('application', { name: 'Mundo' }).click()
+
+  await expect(page.getByRole('status')).toHaveText('1 bola')
+})
+
+test('while the world runs the tools rest', async ({ page }) => {
+  await page.goto('/')
+
+  await page.getByRole('button', { name: 'Correr' }).click()
+
+  await expect(page.getByRole('radio', { name: 'Cubo baixo' })).toBeDisabled()
+})
+
+test('stopping lets the child build again', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Correr' }).click()
+
+  await page.getByRole('button', { name: 'Parar' }).click()
+
+  await expect(page.getByRole('radio', { name: 'Cubo baixo' })).toBeEnabled()
+})

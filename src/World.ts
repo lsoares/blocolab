@@ -15,7 +15,8 @@ export type Piece =
 export class World {
   readonly size: Size
   private placed: Placed[] = []
-  private readonly undoable: Placed[][] = []
+  private balls: Spot[] = []
+  private readonly undoable: { placed: Placed[]; balls: Spot[] }[] = []
   private stroke: 'none' | 'unchanged' | 'changed' = 'none'
 
   constructor(size: Size) {
@@ -24,7 +25,12 @@ export class World {
 
   placeBlock(block: Block) {
     if (!this.hasRoomFor(block)) return
-    this.change([...this.placed, { block, erased: [] }])
+    this.change({ placed: [...this.placed, { block, erased: [] }] })
+  }
+
+  placeBall(spot: Spot) {
+    if (!this.isInside(spot) || this.balls.some((ball) => isSameSpot(ball, spot))) return
+    this.change({ balls: [...this.balls, spot] })
   }
 
   hasRoomFor(block: Block) {
@@ -32,12 +38,15 @@ export class World {
   }
 
   eraseAt(spot: Spot) {
+    if (this.balls.some((ball) => isSameSpot(ball, spot))) {
+      return this.change({ balls: this.balls.filter((ball) => !isSameSpot(ball, spot)) })
+    }
     const target = this.placed.find((placed) => covers(placed, spot))
     if (!target) return
     const erased = [...target.erased, spot]
     const rest = this.placed.filter((placed) => placed !== target)
-    if (erased.length === spotsOf(target.block).length) this.change(rest)
-    else this.change([...rest, { block: target.block, erased }])
+    if (erased.length === spotsOf(target.block).length) this.change({ placed: rest })
+    else this.change({ placed: [...rest, { block: target.block, erased }] })
   }
 
   startStroke() {
@@ -50,7 +59,9 @@ export class World {
 
   undo() {
     const previous = this.undoable.pop()
-    if (previous) this.placed = previous
+    if (!previous) return
+    this.placed = previous.placed
+    this.balls = previous.balls
   }
 
   canUndo() {
@@ -59,6 +70,16 @@ export class World {
 
   findPieceAt(spot: Spot) {
     return this.listPieces().find((piece) => piece.spot.x === spot.x && piece.spot.z === spot.z)
+  }
+
+  measureHeightAt(spot: Spot) {
+    const piece = this.findPieceAt(spot)
+    if (!piece) return 0
+    return piece.kind === 'cube' ? piece.height : (piece.low + piece.high) / 2
+  }
+
+  listBalls() {
+    return [...this.balls]
   }
 
   listBlocks() {
@@ -89,10 +110,11 @@ export class World {
     )
   }
 
-  private change(placed: Placed[]) {
-    if (this.stroke !== 'changed') this.undoable.push(this.placed)
+  private change({ placed = this.placed, balls = this.balls }: { placed?: Placed[]; balls?: Spot[] }) {
+    if (this.stroke !== 'changed') this.undoable.push({ placed: this.placed, balls: this.balls })
     if (this.stroke === 'unchanged') this.stroke = 'changed'
     this.placed = placed
+    this.balls = balls
   }
 }
 

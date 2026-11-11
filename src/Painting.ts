@@ -4,7 +4,8 @@ import type { WorldView } from './WorldView.ts'
 export type Shape = { kind: Block['kind']; height: number }
 
 export class Painting {
-  private tool: Shape | 'eraser' = { kind: 'cube', height: 1 }
+  private tool: Shape | 'ball' | 'eraser' = { kind: 'cube', height: 1 }
+  private paused = false
   private gesture: 'none' | 'drawing' | 'erasing' = 'none'
   private drawingFrom: Spot = { x: 0, z: 0 }
   private cursor: Spot
@@ -22,9 +23,23 @@ export class Painting {
     this.view.hideGhost()
   }
 
+  chooseBall() {
+    this.tool = 'ball'
+    this.view.hideGhost()
+  }
+
   chooseEraser() {
     this.tool = 'eraser'
     this.view.hideGhost()
+  }
+
+  pause() {
+    this.cancel()
+    this.paused = true
+  }
+
+  resume() {
+    this.paused = false
   }
 
   listenTo(canvas: HTMLCanvasElement) {
@@ -39,28 +54,29 @@ export class Painting {
   }
 
   private press(event: PointerEvent, canvas: HTMLCanvasElement) {
-    if (!event.isPrimary || event.button !== 0) return
+    if (this.paused || !event.isPrimary || event.button !== 0) return
     const spot = this.findSpot(event)
     if (!spot) return
     canvas.setPointerCapture(event.pointerId)
     if (this.tool === 'eraser') return this.startErasing(spot)
+    if (this.tool === 'ball') return this.placeBall(spot)
     this.gesture = 'drawing'
     this.drawingFrom = spot
     this.previewBlock(this.draw(this.tool, spot))
   }
 
   private move(event: PointerEvent) {
-    if (!event.isPrimary) return
+    if (this.paused || !event.isPrimary) return
     const spot = this.findSpot(event)
     if (!spot) return
     if (this.gesture === 'erasing') return this.erase(spot)
-    if (this.gesture === 'drawing' && this.tool !== 'eraser') this.previewBlock(this.draw(this.tool, spot))
+    if (this.gesture === 'drawing' && typeof this.tool === 'object') this.previewBlock(this.draw(this.tool, spot))
     else this.preview(spot)
   }
 
   private release(event: PointerEvent) {
     if (!event.isPrimary) return
-    if (this.gesture === 'drawing' && this.tool !== 'eraser')
+    if (this.gesture === 'drawing' && typeof this.tool === 'object')
       this.placeBlock(this.draw(this.tool, this.findSpot(event) ?? this.drawingFrom))
     if (this.gesture === 'erasing') this.world.endStroke()
     this.gesture = 'none'
@@ -84,6 +100,12 @@ export class Painting {
     this.view.hideGhost()
   }
 
+  private placeBall(spot: Spot) {
+    this.world.placeBall(spot)
+    this.onWorldChanged()
+    this.view.hideGhost()
+  }
+
   private placeBlock(block: Block) {
     this.world.placeBlock(block)
     this.onWorldChanged()
@@ -92,7 +114,8 @@ export class Painting {
 
   private preview(spot: Spot) {
     const piece = this.world.findPieceAt(spot)
-    if (this.tool !== 'eraser') this.previewBlock(this.draw(this.tool, spot))
+    if (this.tool === 'ball') this.view.showBallGhost(spot, this.world.measureHeightAt(spot))
+    else if (this.tool !== 'eraser') this.previewBlock(this.draw(this.tool, spot))
     else if (piece) this.view.showErasureGhost(piece)
     else this.view.hideGhost()
   }
@@ -103,7 +126,7 @@ export class Painting {
   }
 
   private findSpot(event: PointerEvent) {
-    const spot = this.tool === 'eraser' ? this.view.pickTouchedSpot(event) : this.view.pickSpotInFront(event)
+    const spot = typeof this.tool === 'object' ? this.view.pickSpotInFront(event) : this.view.pickTouchedSpot(event)
     return spot && this.world.isInside(spot) ? spot : undefined
   }
 
@@ -116,6 +139,7 @@ export class Painting {
   }
 
   private pressKey(event: KeyboardEvent) {
+    if (this.paused) return
     const step = arrowSteps[event.key]
     if (step) this.moveCursor(step)
     else if (event.key === 'Enter' || event.key === ' ') this.useToolAtCursor()
@@ -132,6 +156,7 @@ export class Painting {
 
   private useToolAtCursor() {
     if (this.tool === 'eraser') this.world.eraseAt(this.cursor)
+    else if (this.tool === 'ball') this.world.placeBall(this.cursor)
     else this.world.placeBlock(this.draw(this.tool, this.cursor))
     this.onWorldChanged()
   }

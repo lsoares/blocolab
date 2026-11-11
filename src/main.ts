@@ -1,12 +1,15 @@
 import './style.css'
 import { Painting, type Shape } from './Painting.ts'
-import { type Block, World } from './World.ts'
+import { preparePhysics, Run } from './Run.ts'
+import { World } from './World.ts'
 import { WorldView } from './WorldView.ts'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
 if (!canvas) throw new Error('The page has no #world canvas')
-if (document.createElement('canvas').getContext('webgl2')) startGame(canvas)
-else showThatThe3dWorldIsUnavailable(canvas)
+if (document.createElement('canvas').getContext('webgl2')) {
+  await preparePhysics()
+  startGame(canvas)
+} else showThatThe3dWorldIsUnavailable(canvas)
 
 function startGame(canvas: HTMLCanvasElement) {
   const world = new World({ width: 32, height: 3, depth: 32 })
@@ -15,7 +18,7 @@ function startGame(canvas: HTMLCanvasElement) {
   const undoButton = document.querySelector<HTMLButtonElement>('.undo')
   const showWorld = () => {
     view.show(world)
-    if (blockCount) blockCount.textContent = describeBlocks(world.listBlocks())
+    if (blockCount) blockCount.textContent = describeWorld(world)
     if (undoButton) undoButton.disabled = !world.canUndo()
   }
   const painting = new Painting(world, view, showWorld)
@@ -24,6 +27,7 @@ function startGame(canvas: HTMLCanvasElement) {
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
     radio.addEventListener('change', () => {
       if (radio.value === 'eraser') painting.chooseEraser()
+      else if (radio.value === 'ball') painting.chooseBall()
       else painting.chooseShape({ kind: radio.value as Shape['kind'], height: Number(radio.dataset.height) })
     })
   }
@@ -56,8 +60,34 @@ function startGame(canvas: HTMLCanvasElement) {
     { passive: false },
   )
 
+  const tools = document.querySelector<HTMLFieldSetElement>('.toolbar fieldset')
+  const runButton = document.querySelector<HTMLButtonElement>('.run')
+  let run: Run | undefined
+  const startRunning = () => {
+    run = new Run(world)
+    painting.pause()
+    if (tools) tools.disabled = true
+    if (undoButton) undoButton.disabled = true
+    runButton?.setAttribute('aria-label', 'Parar')
+    if (runButton) runButton.textContent = '■'
+  }
+  const stopRunning = () => {
+    run?.stop()
+    run = undefined
+    painting.resume()
+    if (tools) tools.disabled = false
+    runButton?.setAttribute('aria-label', 'Correr')
+    if (runButton) runButton.textContent = '▶'
+    showWorld()
+  }
+  runButton?.addEventListener('click', () => (run ? stopRunning() : startRunning()))
+
   showWorld()
-  view.start()
+  view.start((seconds) => {
+    if (!run) return
+    run.advance(Math.min(seconds, 0.1))
+    view.showBalls(run.listBallPositions())
+  })
 }
 
 function showThatThe3dWorldIsUnavailable(canvas: HTMLCanvasElement) {
@@ -66,13 +96,15 @@ function showThatThe3dWorldIsUnavailable(canvas: HTMLCanvasElement) {
   document.querySelector<HTMLElement>('.no-3d')?.removeAttribute('hidden')
 }
 
-function describeBlocks(blocks: Block[]) {
-  if (blocks.length === 0) return '0 blocos'
+function describeWorld(world: World) {
+  const blocks = world.listBlocks()
   const plural = new Intl.PluralRules('pt-PT')
-  const names = { cube: ['cubo', 'cubos'], ramp: ['rampa', 'rampas'] }
-  const counts = (['cube', 'ramp'] as const)
-    .map((kind) => ({ kind, count: blocks.filter((block) => block.kind === kind).length }))
+  const counts = [
+    { count: blocks.filter((block) => block.kind === 'cube').length, names: ['cubo', 'cubos'] },
+    { count: blocks.filter((block) => block.kind === 'ramp').length, names: ['rampa', 'rampas'] },
+    { count: world.listBalls().length, names: ['bola', 'bolas'] },
+  ]
     .filter(({ count }) => count > 0)
-    .map(({ kind, count }) => `${count} ${names[kind][plural.select(count) === 'one' ? 0 : 1]}`)
-  return new Intl.ListFormat('pt-PT').format(counts)
+    .map(({ count, names }) => `${count} ${names[plural.select(count) === 'one' ? 0 : 1]}`)
+  return counts.length === 0 ? '0 blocos' : new Intl.ListFormat('pt-PT').format(counts)
 }

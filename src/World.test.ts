@@ -197,3 +197,59 @@ describe('Undo', () => {
     assert.equal(canUndo, false)
   })
 })
+
+describe('Balls', () => {
+  test('a placed ball stays on its spot', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+
+    world.placeBall({ x: 2, z: 3 })
+
+    assert.deepEqual(world.listBalls(), [{ x: 2, z: 3 }])
+  })
+
+  test('a spot holds only one ball', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBall({ x: 2, z: 3 })
+
+    world.placeBall({ x: 2, z: 3 })
+
+    assert.equal(world.listBalls().length, 1)
+  })
+
+  test('erasing a spot with a ball takes the ball and leaves the block under it', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBlock({ kind: 'cube', origin: { x: 2, z: 3 }, size: { width: 1, height: 1, depth: 1 } })
+    world.placeBall({ x: 2, z: 3 })
+
+    world.eraseAt({ x: 2, z: 3 })
+
+    assert.deepEqual([world.listBalls(), world.listBlocks().length], [[], 1])
+  })
+
+  test('undo takes back a placed ball', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBall({ x: 2, z: 3 })
+
+    world.undo()
+
+    assert.deepEqual(world.listBalls(), [])
+  })
+
+  test('the ground is as high as the cube standing on it', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBlock({ kind: 'cube', origin: { x: 0, z: 0 }, size: { width: 2, height: 2, depth: 2 } })
+
+    const height = world.measureHeightAt({ x: 1, z: 1 })
+
+    assert.equal(height, 2)
+  })
+
+  test('the ground on a ramp is halfway up its piece', () => {
+    const world = new World({ width: 8, height: 3, depth: 8 })
+    world.placeBlock({ kind: 'ramp', origin: { x: 0, z: 0 }, size: { width: 2, height: 2, depth: 1 }, facing: 'east' })
+
+    const height = world.measureHeightAt({ x: 1, z: 0 })
+
+    assert.equal(height, 1.5)
+  })
+})

@@ -40,6 +40,11 @@
           <svg aria-hidden="true" viewBox="-1.25 -1.40 2.50 2.50"><polygon points="0.87,0.50 0.87,-1.30 0.00,-0.80 0.00,1.00" fill="var(--block-side)" /><polygon points="-0.87,0.50 0.00,1.00 0.00,-0.80" fill="var(--block-shade)" /><polygon points="0.00,0.00 0.87,-1.30 0.00,-0.80 -0.87,0.50" fill="var(--block-top)" /></svg>
           <span class="visually-hidden">Rampa alta</span>
         </label>
+        <label title="Bola">
+          <input type="radio" name="tool" value="ball" />
+          <svg aria-hidden="true" viewBox="-1 -1 2 2"><circle r="0.7" fill="var(--ball)" /></svg>
+          <span class="visually-hidden">Bola</span>
+        </label>
         <label title="Borracha">
           <input type="radio" name="tool" value="eraser" />
           <span aria-hidden="true">🧽</span>
@@ -52,6 +57,7 @@
     <main>
       <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the world is a keyboard-driven widget, which is what the application role announces -->
       <canvas id="world" role="application" tabindex="0" aria-label="Mundo"></canvas>
+      <button type="button" class="run" aria-label="Correr" title="Correr / Parar">▶</button>
       <fieldset class="camera">
         <legend class="visually-hidden">Câmara</legend>
         <button type="button" data-camera="rotate" aria-label="Rodar" title="Rodar">⟳</button>

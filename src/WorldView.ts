@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { IsometricCamera } from './IsometricCamera.ts'
+import type { BallPosition } from './Run.ts'
 import type { Block, Facing, Piece, Size, Spot, World } from './World.ts'
 
 export class WorldView {
@@ -11,6 +12,7 @@ export class WorldView {
   private readonly cubes: THREE.InstancedMesh
   private readonly rampBases: THREE.InstancedMesh
   private readonly slopes: THREE.InstancedMesh
+  private readonly balls: THREE.InstancedMesh
   private readonly ghost = createGhost()
   private readonly raycaster = new THREE.Raycaster()
   private readonly shownSpots = new Map<THREE.Object3D, Spot[]>()
@@ -31,17 +33,19 @@ export class WorldView {
     this.cubes = createPieces(new THREE.BoxGeometry(1, 1, 1), '#c9925f', size)
     this.rampBases = createPieces(new THREE.BoxGeometry(1, 1, 1), '#e8b46a', size)
     this.slopes = createPieces(createRampGeometry(), '#e8b46a', size)
-    this.board.add(this.ground, createGridLines(size), this.cubes, this.rampBases, this.slopes, this.ghost)
+    this.balls = createPieces(new THREE.SphereGeometry(0.4, 24, 16), '#e8453c', size)
+    this.board.add(this.ground, createGridLines(size), this.cubes, this.rampBases, this.slopes, this.balls, this.ghost)
     this.scene.add(...createLights(size))
 
     new ResizeObserver(() => this.fitToCanvas()).observe(canvas)
     this.fitToCanvas()
   }
 
-  start() {
+  start(onFrame: (seconds: number) => void) {
     const timer = new THREE.Timer()
     this.renderer.setAnimationLoop((timestamp) => {
       timer.update(timestamp)
+      onFrame(timer.getDelta())
       this.camera.advance(timer.getDelta())
       this.renderer.render(this.scene, this.camera.camera)
     })
@@ -64,6 +68,25 @@ export class WorldView {
       this.slopes,
       ramps.map((ramp) => ({ spot: ramp.spot, placement: slopeOf(ramp) })),
     )
+    this.showBalls(
+      world.listBalls().map((spot) => ({ x: spot.x + 0.5, y: world.measureHeightAt(spot) + 0.4, z: spot.z + 0.5 })),
+    )
+  }
+
+  showBalls(positions: BallPosition[]) {
+    positions.forEach(({ x, y, z }, index) => {
+      this.balls.setMatrixAt(index, new THREE.Matrix4().makeTranslation(x, y, z))
+    })
+    this.balls.count = positions.length
+    this.balls.instanceMatrix.needsUpdate = true
+    this.balls.computeBoundingSphere()
+  }
+
+  showBallGhost(spot: Spot, height: number) {
+    this.hideGhostParts()
+    this.ghost.ball.visible = true
+    this.ghost.matrix.makeTranslation(spot.x + 0.5, height + 0.4, spot.z + 0.5)
+    this.ghost.visible = true
   }
 
   showPlacementGhost(block: Block) {
@@ -75,8 +98,7 @@ export class WorldView {
   }
 
   showErasureGhost(piece: Piece) {
-    this.ghost.cube.visible = false
-    this.ghost.ramp.visible = false
+    this.hideGhostParts()
     this.ghost.erasure.visible = true
     this.ghost.matrix.copy(columnOf(piece.spot, 0, piece.kind === 'cube' ? piece.height : piece.high))
     this.ghost.visible = true
@@ -108,7 +130,7 @@ export class WorldView {
 
   private findHit(pointer: PointerEvent) {
     this.aimAt(pointer)
-    return this.raycaster.intersectObjects([this.cubes, this.rampBases, this.slopes, this.ground], false)[0]
+    return this.raycaster.intersectObjects([this.cubes, this.rampBases, this.slopes, this.balls, this.ground], false)[0]
   }
 
   private findHitPiece(hit: THREE.Intersection) {
@@ -138,13 +160,17 @@ export class WorldView {
   }
 
   private showShapeGhost(block: Block, look: THREE.MeshBasicMaterial) {
+    this.hideGhostParts()
     this.ghost.cube.visible = block.kind === 'cube'
     this.ghost.ramp.visible = block.kind === 'ramp'
     this.ghost.cube.material = look
     this.ghost.ramp.material = look
-    this.ghost.erasure.visible = false
     this.ghost.matrix.copy(placementOf(block))
     this.ghost.visible = true
+  }
+
+  private hideGhostParts() {
+    for (const part of [this.ghost.cube, this.ghost.ramp, this.ghost.ball, this.ghost.erasure]) part.visible = false
   }
 
   private fitToCanvas() {
@@ -238,6 +264,7 @@ function createGhost() {
   const box = new THREE.BoxGeometry(1.02, 1.02, 1.02)
   const cube = new THREE.Mesh(box, placementLook)
   const ramp = new THREE.Mesh(createRampGeometry().scale(1.02, 1.02, 1.02), placementLook)
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 16), placementLook)
   const erasure = new THREE.Group().add(
     new THREE.Mesh(
       box,
@@ -246,9 +273,10 @@ function createGhost() {
     new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: '#7a0000' })),
     createCross(),
   )
-  const ghost = Object.assign(new THREE.Group().add(cube, ramp, erasure), {
+  const ghost = Object.assign(new THREE.Group().add(cube, ramp, ball, erasure), {
     cube,
     ramp,
+    ball,
     erasure,
     placementLook,
     blockedLook,
