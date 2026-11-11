@@ -144,6 +144,6 @@ main {
   white-space: nowrap;
 }
 
-[hidden] {
-  display: none !important;
+.toolbar[hidden] {
+  display: none;
 }
