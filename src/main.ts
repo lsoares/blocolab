@@ -19,9 +19,7 @@ function showTheGames(all: Game[], chosen: Game) {
   for (const other of all) {
     switcher?.insertAdjacentHTML(
       'beforeend',
-      `<a href="#${other.id}" data-name="${other.name}"${other === chosen ? ' aria-current="page"' : ''}>
-        <span aria-hidden="true">${other.icon}</span><span class="visually-hidden">${other.name}</span>
-      </a>`,
+      `<a href="#${other.id}"${other === chosen ? ' aria-current="page"' : ''}><span aria-hidden="true">${other.icon}</span>${other.name}</a>`,
     )
   }
 }

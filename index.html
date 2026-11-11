@@ -7,34 +7,39 @@
     <title>Blocolab</title>
   </head>
   <body>
-    <aside class="toolbar">
+    <header class="app-bar">
+      <h1 class="app-name">Blocolab</h1>
       <nav class="games" aria-label="Jogos"></nav>
-      <fieldset class="pieces">
-        <legend class="visually-hidden">Peça</legend>
-      </fieldset>
-      <fieldset class="corrections">
-        <legend class="visually-hidden">Corrigir</legend>
-        <label data-name="Borracha">
-          <input type="radio" name="tool" value="eraser" />
-          <span aria-hidden="true">🧽</span>
-          <span class="visually-hidden">Borracha</span>
-        </label>
-        <button type="button" class="undo" aria-label="Desfazer" data-name="Desfazer" disabled>↶</button>
-      </fieldset>
-      <output class="visually-hidden" aria-live="polite">0 peças</output>
-    </aside>
-    <main>
-      <section class="challenge" aria-label="Desafio" aria-live="polite">
-        <p class="goal"></p>
-        <button type="button" class="next" hidden>Próximo desafio</button>
-      </section>
-      <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the board is a keyboard-driven widget, which is what the application role announces -->
-      <canvas id="world" role="application" tabindex="0" aria-label="Tabuleiro"></canvas>
-      <div class="piece-name" role="tooltip" hidden></div>
-      <p class="no-3d" role="alert" hidden>
-        Este browser não consegue mostrar o tabuleiro em 3D. Experimenta numa versão recente do Chrome, Firefox, Safari ou Edge.
-      </p>
-    </main>
+    </header>
+    <div class="game">
+      <aside class="toolbar">
+        <fieldset class="pieces">
+          <legend class="visually-hidden">Peça</legend>
+        </fieldset>
+        <fieldset class="corrections">
+          <legend class="visually-hidden">Corrigir</legend>
+          <label data-name="Borracha">
+            <input type="radio" name="tool" value="eraser" />
+            <span aria-hidden="true">🧽</span>
+            <span class="visually-hidden">Borracha</span>
+          </label>
+          <button type="button" class="undo" aria-label="Desfazer" data-name="Desfazer" disabled>↶</button>
+        </fieldset>
+        <output class="visually-hidden" aria-live="polite">0 peças</output>
+      </aside>
+      <main>
+        <section class="challenge" aria-label="Desafio" aria-live="polite">
+          <p class="goal"></p>
+          <button type="button" class="next" hidden>Próximo desafio</button>
+        </section>
+        <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the board is a keyboard-driven widget, which is what the application role announces -->
+        <canvas id="world" role="application" tabindex="0" aria-label="Tabuleiro"></canvas>
+        <div class="piece-name" role="tooltip" hidden></div>
+        <p class="no-3d" role="alert" hidden>
+          Este browser não consegue mostrar o tabuleiro em 3D. Experimenta numa versão recente do Chrome, Firefox, Safari ou Edge.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

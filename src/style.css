@@ -67,6 +67,58 @@ body {
 
 body {
   display: flex;
+  flex-direction: column;
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space) * 2);
+  padding: 0 calc(var(--space) * 2);
+  min-height: 2.75rem;
+  background: var(--panel);
+  box-shadow: 0 2px 8px var(--shadow);
+  z-index: 2;
+
+  .app-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .games {
+    display: flex;
+    gap: var(--space);
+  }
+
+  .games a {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--space) * 0.75);
+    min-height: 2.75rem;
+    padding: 0 calc(var(--space) * 1.5);
+    box-sizing: border-box;
+    font-weight: 600;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+  }
+
+  .games a[aria-current="page"] {
+    background: var(--control-chosen);
+    border-bottom-color: var(--accent);
+  }
+
+  .games a:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
+  }
+}
+
+.game {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .toolbar {
@@ -79,19 +131,13 @@ body {
   box-shadow: 2px 0 8px var(--shadow);
   z-index: 1;
 
-  fieldset,
-  .games {
+  fieldset {
     display: flex;
     flex-direction: column;
     gap: var(--space);
     margin: 0;
     padding: 0;
     border: none;
-  }
-
-  .games {
-    padding-bottom: var(--space);
-    border-bottom: 2px solid var(--shadow);
   }
 
   .corrections {
@@ -102,8 +148,7 @@ body {
 
 .toolbar {
   label,
-  button,
-  a {
+  button {
     position: relative;
     display: grid;
     place-items: center;
@@ -120,10 +165,6 @@ body {
     touch-action: manipulation;
   }
 
-  a {
-    text-decoration: none;
-  }
-
   label:has(:checked) {
     border-color: var(--accent);
     background: var(--control-chosen);
@@ -131,8 +172,7 @@ body {
   }
 
   label:has(:focus-visible),
-  button:focus-visible,
-  a:focus-visible {
+  button:focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
   }
@@ -153,21 +193,6 @@ body {
     margin: 0;
     opacity: 0;
     cursor: pointer;
-  }
-
-  .games a {
-    width: calc(var(--control-size) * 0.8);
-    height: calc(var(--control-size) * 0.8);
-    font-size: calc(var(--control-size) * 0.4);
-    border: none;
-    border-radius: var(--radius);
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .games a[aria-current="page"] {
-    background: var(--control-chosen);
-    box-shadow: inset 0 -3px 0 var(--accent);
   }
 }
 
