@@ -397,3 +397,14 @@ Transformam brincadeira em experiência científica sem mudar de jogo.
 - Escolas como público (precisa de modo professor / desafios por turma) ou só famílias?
 - Estética: voxel colorido (Townscaper) ou mais "brinquedo de madeira" (GraviTrax)?
 - Som/narração para quem ainda não lê?
+
+## Robô (quarto jogo)
+
+Primeira fatia: o robô segue **cartas** (avançar, virar à esquerda, virar à direita) juntas numa
+fila por baixo do tabuleiro; ▶ Executar faz o robô andar carta a carta até à ⭐. Pedras e a borda
+do tabuleiro fazem-no bater. Seis desafios (reta, virar, contornar, esquerda, meia-volta, entre
+pedras). Desfazer tira a última carta; Limpar esvazia a fila.
+
+- Ideias a seguir: repetir (cartas "×3" para os mais velhos), funções/blocos próprios,
+  limite de cartas ("chega lá com 5"), mais objetos (chaves e portas, botões que ligam
+  circuitos do outro jogo), ligar o robô aos circuitos (o robô acende a lâmpada).

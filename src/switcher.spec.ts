@@ -59,12 +59,12 @@ test('the train game starts at its first challenge whatever the circuits reached
   await expect(game.getChallenge()).toContainText('Põe o comboio a andar.')
 })
 
-test('the switcher offers the three games', async ({ page }) => {
+test('the switcher offers the four games', async ({ page }) => {
   const game = new GamePage(page)
 
   await game.open()
 
-  await expect(page.getByRole('navigation', { name: 'Jogos' }).getByRole('link')).toHaveCount(3)
+  await expect(page.getByRole('navigation', { name: 'Jogos' }).getByRole('link')).toHaveCount(4)
 })
 
 test('the switcher takes the child to the water game', async ({ page }) => {
