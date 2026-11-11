@@ -20,9 +20,11 @@ a meio num `git stash`). O jogo passa a ser **como um kit de circuitos de encaix
 - A corrente é **ao vivo**: não há ▶. Fecha o circuito e a lâmpada acende, o motor roda,
   a campainha toca. Um interruptor aberto corta o circuito; um fio direto de uma ponta
   da pilha à outra é **curto-circuito**.
-- Gestos, sem botões a mais: tocar põe a peça; arrastar com o fio **desenha logo**, casa a casa,
-  com curvas (só preenche casas vazias); arrastar com outra peça decide para onde ela está virada;
-  tocar num interruptor liga/desliga; a borracha apaga só o que toca.
+- Gestos, sem botões a mais: tocar põe a peça; o **fio só se faz a arrastar** (um toque não
+  deixa um ponto solto de 1×1), desenha logo, casa a casa, com curvas (só preenche casas vazias);
+  arrastar com outra peça decide para onde ela está virada; tocar num interruptor liga/desliga;
+  a borracha apaga só o que toca. A barra começa pelo fio; a borracha e o Desfazer ficam à parte,
+  em baixo. O aviso do desafio mostra só o objetivo (sem dica, sem "saltar", sem contador).
 
 **Ajustes pedidos a ver o jogo** (feitos): as peças com duas pontas **viram-se sozinhas** para
 encostar aos fios que têm à volta; pôr uma peça **por cima** de outra substitui-a (um troço de
@@ -50,6 +52,30 @@ crianças não sabem de polaridade). 14 desafios, dois deles sobre brilho.
 Próximas ideias deste jogo: mais pilhas e polaridade a sério para os mais velhos (pilha ao
 contrário), resistência, íman, ventoinha no motor, volume da campainha pela força, e objetos
 que caem no tabuleiro (o muro serve para isso).
+
+## Como evoluir este jogo e que outros jogos fazer (2026-11-11)
+
+Evoluir os circuitos (do mais barato ao mais caro):
+
+1. Ver a corrente: pontinhos a correr pelos fios, mais depressa com mais força.
+2. Peças novas: botão de carregar, díodo/LED (polaridade), resistência (potenciómetro), sensor de
+   luz, campainha com tom diferente, pilha ao contrário para os mais velhos.
+3. Instrumentos para os 12–16: voltímetro e amperímetro com números (lei de Ohm).
+4. Superaquecer: num curto-circuito o fio fica vermelho e a pilha aquece (consequência visível).
+5. Missões com história (acender o farol, a campainha da porta) e estrelas por usar menos peças.
+6. Guardar e partilhar circuitos por link; modo professor com desafios por turma.
+7. Portas lógicas com interruptores (série = E, paralelo = OU) a caminho da programação.
+
+Outros jogos com o mesmo motor (tabuleiro com muro, peças em grelha, regras sem física pesada):
+
+- **Circuito de água**: tubos, bombas (motor), torneiras (interruptor); a água ensina a eletricidade
+  por analogia e mostra pressão e caudal.
+- **Pistas de berlindes** no tabuleiro com muro, com íman, ventoinha e rampas (a física das fatias
+  anteriores volta aqui).
+- **Robô e setas** (programação): o robô percorre o tabuleiro e liga/desliga circuitos.
+- **Luz e espelhos**: laser, espelhos e lentes na grelha.
+- **Música**: campainhas com tons e um sequenciador em fila.
+- **Engrenagens e alavancas** (máquinas de Rube Goldberg) acionadas pelo motor.
 
 As secções abaixo (blocos, rampas, água) são ideias anteriores; guardam-se para outros jogos.
 
