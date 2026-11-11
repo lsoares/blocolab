@@ -1,13 +1,22 @@
 import type { Axis, BoardSize, Side, Spot } from '../stage/Grid.ts'
-import { aimPoints, findLinkedSides, type Route, turnToMeetNeighbours, walkRoute } from './Rails.ts'
+import {
+  aimPoints,
+  findLinkedSides,
+  findWaterSides,
+  isRailPiece,
+  type Route,
+  turnToMeetNeighbours,
+  walkRoute,
+} from './Rails.ts'
 
 export type Piece =
   | { kind: 'track'; spot: Spot }
-  | { kind: 'station' | 'tunnel'; spot: Spot; axis: Axis }
+  | { kind: 'station' | 'tunnel' | 'barrier'; spot: Spot; axis: Axis }
   | { kind: 'bridge'; spot: Spot; axis: Axis }
   | { kind: 'points'; spot: Spot; side: Side }
   | { kind: 'signal'; spot: Spot; axis: Axis; go: boolean }
   | { kind: 'tree'; spot: Spot }
+  | { kind: 'river'; spot: Spot }
 
 export class Railway {
   readonly size: BoardSize
@@ -97,6 +106,15 @@ export class Railway {
     return findLinkedSides(this.pieces, spot)
   }
 
+  listWaterSides(spot: Spot) {
+    return findWaterSides(this.pieces, spot)
+  }
+
+  isRailAt(spot: Spot) {
+    const piece = this.findPieceAt(spot)
+    return piece !== undefined && isRailPiece(piece)
+  }
+
   findTrainSpot() {
     return this.train
   }
@@ -107,11 +125,6 @@ export class Railway {
 
   isInside({ x, z }: Spot) {
     return x >= 0 && x < this.size.columns && z >= 0 && z < this.size.rows
-  }
-
-  private isRailAt(spot: Spot) {
-    const piece = this.findPieceAt(spot)
-    return piece !== undefined && piece.kind !== 'tree'
   }
 
   private change(changes: { pieces?: Piece[]; train?: Spot | null }) {
@@ -125,7 +138,7 @@ export class Railway {
 
 function isSamePiece(a: Piece, b: Piece) {
   if (a.kind !== b.kind) return false
-  if (a.kind === 'track' || a.kind === 'tree' || a.kind === 'points') return true
-  if (b.kind === 'track' || b.kind === 'tree' || b.kind === 'points') return true
+  if (a.kind === 'track' || a.kind === 'tree' || a.kind === 'points' || a.kind === 'river') return true
+  if (b.kind === 'track' || b.kind === 'tree' || b.kind === 'points' || b.kind === 'river') return true
   return a.axis === b.axis
 }

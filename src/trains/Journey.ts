@@ -1,5 +1,5 @@
 import { opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
-import { chooseExit, findStartTraversal, type Traversal, terminalSidesOf } from './Rails.ts'
+import { chooseExit, findStartTraversal, isRailPiece, type Traversal, terminalSidesOf } from './Rails.ts'
 import type { Piece, Railway } from './Railway.ts'
 
 export type Car = { x: number; z: number; heading: number; hidden: boolean; lift: number }
@@ -101,7 +101,7 @@ export class Journey {
     const next = stepFrom(this.traversal.spot, this.traversal.exit)
     const nextPiece = this.railway.findPieceAt(next)
     const enter = opposite[this.traversal.exit]
-    if (!nextPiece || !terminalSidesOf(nextPiece).includes(enter)) return false
+    if (!nextPiece || !isRailPiece(nextPiece) || !terminalSidesOf(nextPiece).includes(enter)) return false
     if (nextPiece.kind === 'signal' && !nextPiece.go) return false
     const choice = chooseExit(pieces, next, enter, this.alternation)
     this.travelled = 0

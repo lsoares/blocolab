@@ -170,6 +170,28 @@ describe('The train on its way', () => {
   })
 })
 
+describe('The train and the water', () => {
+  test('the train stops at the bank of a river', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['Mtwtt'])
+    const journey = new Journey(railway)
+
+    journey.advance(30)
+
+    assert.ok(Math.abs((journey.listCars()[0]?.x ?? 0) - 1.5) < 0.05)
+  })
+
+  test('the train crosses the river over the bridge', () => {
+    const railway = new Railway({ columns: 10, rows: 6 })
+    draw(railway, ['.w...', 'MBttt', '.w...'])
+    const journey = new Journey(railway)
+
+    journey.advance(30)
+
+    assert.ok(Math.abs((journey.listCars()[0]?.x ?? 0) - 4.5) < 0.05)
+  })
+})
+
 describe('The train on a bridge', () => {
   test('the train rises to the top of the bridge', () => {
     const railway = new Railway({ columns: 10, rows: 6 })
@@ -232,6 +254,7 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 'E') return { kind: 'station', spot, axis: 'horizontal' }
   if (symbol === 'U') return { kind: 'tunnel', spot, axis: 'horizontal' }
   if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
+  if (symbol === 'w') return { kind: 'river', spot }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }
   return undefined

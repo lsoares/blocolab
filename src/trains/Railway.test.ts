@@ -222,6 +222,91 @@ describe('Points', () => {
   })
 })
 
+describe('Rivers', () => {
+  test('a river links to the water beside it', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['ww.', 'w..'])
+
+    const sides = railway.listWaterSides({ x: 0, z: 0 })
+
+    assert.deepEqual(sides, ['east', 'south'])
+  })
+
+  test('a track beside a river is not linked to it', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['tw'])
+
+    const sides = railway.listLinkedSides({ x: 0, z: 0 })
+
+    assert.deepEqual(sides, [])
+  })
+
+  test('a bridge links to the river under it', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w.', 'tBt', '.w.'])
+
+    const sides = railway.listWaterSides({ x: 1, z: 1 })
+
+    assert.deepEqual(sides, ['north', 'south'])
+  })
+
+  test('a bridge does not turn to follow the river', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w.', '.B.', '.w.'])
+
+    const bridge = railway.findPieceAt({ x: 1, z: 1 })
+
+    assert.deepEqual(bridge, { kind: 'bridge', spot: { x: 1, z: 1 }, axis: 'horizontal' })
+  })
+
+  test('a train stops where the track meets a river', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['Mtwt'])
+
+    const visited = railway.planRoute()?.visits.map(({ spot }) => spot.x)
+
+    assert.deepEqual(visited, [0, 1])
+  })
+
+  test('a train crosses a river over a bridge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['.w...', 'MBttt', '.w...'])
+
+    const visited = railway.planRoute()?.visits.map(({ spot }) => spot.x)
+
+    assert.deepEqual(visited, [0, 1, 2, 3, 4])
+  })
+
+  test('the train cannot stand on a river', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    railway.placePiece({ kind: 'river', spot: { x: 1, z: 1 } })
+
+    railway.placeTrain({ x: 1, z: 1 })
+
+    assert.equal(railway.findTrainSpot(), undefined)
+  })
+})
+
+describe('Barriers', () => {
+  test('a barrier turns to meet the track beside it', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    railway.placePiece({ kind: 'barrier', spot: { x: 1, z: 1 }, axis: 'vertical' })
+
+    railway.placePiece({ kind: 'track', spot: { x: 2, z: 1 } })
+
+    assert.deepEqual(railway.findPieceAt({ x: 1, z: 1 }), { kind: 'barrier', spot: { x: 1, z: 1 }, axis: 'horizontal' })
+  })
+
+  test('a train passes through a barrier on its way', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MtXtt'])
+
+    const visited = railway.planRoute()?.visits.some(({ spot }) => spot.x === 2)
+
+    assert.equal(visited, true)
+  })
+})
+
 describe('The train', () => {
   test('the train stands on a track', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
@@ -400,6 +485,8 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   const axis = symbol === symbol.toUpperCase() ? 'horizontal' : 'vertical'
   if (symbol === 't' || symbol === 'M') return { kind: 'track', spot }
   if (symbol === 'a') return { kind: 'tree', spot }
+  if (symbol === 'w') return { kind: 'river', spot }
+  if (symbol.toLowerCase() === 'x') return { kind: 'barrier', spot, axis }
   if (symbol === 'B' || symbol === 'b') return { kind: 'bridge', spot, axis }
   if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol.toLowerCase() === 'e') return { kind: 'station', spot, axis }
