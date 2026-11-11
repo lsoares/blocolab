@@ -69,11 +69,17 @@ o rato. Um alternador no topo da barra muda de jogo (cada jogo tem a sua página
 - Num T o comboio segue em frente; vindo da perna do T, alterna entre os dois lados. Num
   cruzamento segue em frente.
 - Peças com duas pontas (estação, túnel, semáforo) viram-se sozinhas para encostar aos carris.
-- 8 desafios: andar, dar a volta, estação, túnel, semáforo vermelho, volta com semáforo verde,
-  oito (cruzamento nos dois sentidos) e árvores ao lado da linha.
-- Ideias a seguir: pontes (carril elevado) e barreiras (passagem de nível), agulhas (desvios
-  que se mudam a tocar), vários comboios, carga que se deixa na estação, passageiros, mais
-  carruagens, apitos, estações com nome, e comboios a não chocarem.
+- **Ponte**: um arco por onde o comboio passa por cima de outra linha; as duas linhas não se
+  ligam (ao contrário do cruzamento) e o comboio nunca vira em cima da ponte. O comboio sobe e
+  desce o arco, e quem passa por baixo não sobe. Vira-se sozinha para a linha que a encosta.
+- **Agulha**: numa bifurcação, a seta amarela mostra o lado para onde o comboio vai quando pode
+  escolher; toca-se para mudar de ramal (passa pelos lados ligados, um de cada vez).
+- 12 desafios: andar, dar a volta, estação, túnel, semáforo vermelho, volta com semáforo verde,
+  ponte, por cima e por baixo da ponte, agulha, desviar com a agulha, oito (cruzamento nos dois
+  sentidos) e árvores ao lado da linha.
+- Ideias a seguir: barreiras (passagem de nível), rio por baixo da ponte, vários comboios,
+  carga que se deixa na estação, passageiros, mais carruagens, apitos, estações com nome, e
+  comboios a não chocarem.
 
 ## Como evoluir este jogo e que outros jogos fazer (2026-11-11)
 
