@@ -32,6 +32,16 @@ export const trains: Game = {
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20v-7a10 10 0 0 1 20 0v7z" fill="var(--stone)" /><path d="M7 20v-5a5 5 0 0 1 10 0v5z" fill="var(--rail-dark)" /></svg>`,
     },
     {
+      value: 'bridge',
+      name: 'Ponte',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M1 19h4Q12 3 19 19h4" fill="none" stroke="var(--wood)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" /><path d="M1 21.5h22" stroke="var(--rail)" stroke-width="1.5" /></svg>`,
+    },
+    {
+      value: 'points',
+      name: 'Agulha',
+      icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 18h12M14 18 21 9M14 18h8" stroke="var(--wood)" stroke-width="3.6" stroke-linecap="round" fill="none" /><path d="M17 4.5l5 3.5-5 3z" fill="#f0a020" /></svg>`,
+    },
+    {
       value: 'signal',
       name: 'Semáforo',
       icon: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="10.5" y="10" width="3" height="12" fill="var(--rail-dark)" /><rect x="7" y="1.5" width="10" height="11" rx="2" fill="var(--rail-dark)" /><circle cx="12" cy="5.5" r="2.2" fill="var(--signal-red)" /><circle cx="12" cy="9.8" r="2.2" fill="var(--signal-green)" /></svg>`,
@@ -104,10 +114,14 @@ function describeRoute(route: NonNullable<ReturnType<Railway['planRoute']>>) {
 }
 
 function nameOf(piece: Piece) {
+  if (piece.kind === 'points') {
+    return `Agulha (para ${{ north: 'cima', east: 'a direita', south: 'baixo', west: 'a esquerda' }[piece.side]})`
+  }
   return {
     track: 'Carril',
     station: 'Estação',
     tunnel: 'Túnel',
+    bridge: 'Ponte',
     signal: `Semáforo (${piece.kind === 'signal' && piece.go ? 'verde' : 'vermelho'})`,
     tree: 'Árvore',
   }[piece.kind]

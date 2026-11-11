@@ -122,3 +122,33 @@ test('undo takes back a whole dragged track', async ({ page }) => {
 
   await expect(game.getStatus()).toHaveText('0 peças')
 })
+
+test('placing a bridge says it is a bridge', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Ponte')
+  await game.getBoard().click()
+
+  await game.hoverBoard()
+
+  await expect(game.getPieceName()).toHaveText('Ponte')
+})
+
+test('placing points says where they point', async ({ page }) => {
+  const game = new GamePage(page)
+  await game.open('comboio')
+  await game.choosePiece('Agulha')
+  await game.getBoard().click()
+
+  await game.hoverBoard()
+
+  await expect(game.getPieceName()).toHaveText(/^Agulha \(para /)
+})
+
+test('the train game offers the bridge and the points', async ({ page }) => {
+  const game = new GamePage(page)
+
+  await game.open('comboio')
+
+  await expect(page.getByRole('radio', { name: 'Agulha' })).toBeVisible()
+})

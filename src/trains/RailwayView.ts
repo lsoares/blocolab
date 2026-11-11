@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { BoardStage } from '../stage/BoardStage.ts'
-import type { BoardSize, Side, Spot } from '../stage/Grid.ts'
+import type { Axis, BoardSize, Side, Spot } from '../stage/Grid.ts'
 import {
   box,
   createErasureMarker,
@@ -10,7 +10,7 @@ import {
   showAsGhost,
   standingCylinder,
 } from '../stage/Parts.ts'
-import type { Car } from './Journey.ts'
+import { bridgeRise, type Car } from './Journey.ts'
 import type { Piece, Railway } from './Railway.ts'
 
 export class RailwayView {
@@ -41,7 +41,7 @@ export class RailwayView {
       const car = cars[index]
       model.visible = car !== undefined && !car.hidden
       if (!car) return
-      model.position.set(car.x, 0.1, car.z)
+      model.position.set(car.x, 0.1 + car.lift, car.z)
       model.rotation.y = -car.heading
     })
   }
@@ -87,6 +87,8 @@ function createPieceModel(piece: Piece, linkedSides: Side[]) {
   model.position.set(piece.spot.x + 0.5, 0, piece.spot.z + 0.5)
   if (piece.kind === 'track') model.add(...createTrack(linkedSides))
   else if (piece.kind === 'tree') model.add(createTree(piece.spot))
+  else if (piece.kind === 'points') model.add(...createPoints(piece.side, linkedSides))
+  else if (piece.kind === 'bridge') model.add(...createBridge(piece.axis, linkedSides))
   else {
     const inner = new THREE.Group()
     inner.rotation.y = piece.axis === 'horizontal' ? 0 : Math.PI / 2
@@ -97,6 +99,42 @@ function createPieceModel(piece: Piece, linkedSides: Side[]) {
     model.add(inner)
   }
   return model
+}
+
+function createPoints(aimedAt: Side, linkedSides: Side[]) {
+  const { x, z } = vectorOf(aimedAt)
+  const arrow = part(new THREE.ConeGeometry(0.11, 0.26, 12), '#f0a020', [x * 0.18, 0.26, z * 0.18])
+  arrow.rotation.z = -x * (Math.PI / 2)
+  arrow.rotation.x = z * (Math.PI / 2)
+  const hub = part(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 16), '#5a4a3a', [0, 0.14, 0])
+  return [box([0.64, 0.1, 0.64], wood, [0, 0.05, 0]), ...linkedSides.flatMap(createArm), hub, arrow]
+}
+
+function createBridge(axis: Axis, linkedSides: Side[]) {
+  const alongX = axis === 'horizontal'
+  const underneath = linkedSides.filter((side) => (vectorOf(side).x !== 0) !== alongX)
+  const raised = new THREE.Group()
+  raised.rotation.y = alongX ? 0 : Math.PI / 2
+  raised.add(
+    part(archedBand(0.14, 0.64, 0), wood, [0, 0, 0]),
+    part(archedBand(0.05, 0.06, -0.16, 0.1), rail, [0, 0, 0]),
+    part(archedBand(0.05, 0.06, 0.16, 0.1), rail, [0, 0, 0]),
+    part(archedBand(0.18, 0.05, -0.31, 0.2), '#b98a55', [0, 0, 0]),
+    part(archedBand(0.18, 0.05, 0.31, 0.2), '#b98a55', [0, 0, 0]),
+  )
+  return [raised, ...underneath.flatMap(createArm)]
+}
+
+function archedBand(thickness: number, width: number, aside: number, lift = 0) {
+  const profile = (along: number) => 0.1 + (bridgeRise * (1 - Math.cos(2 * Math.PI * along))) / 2 + lift
+  const samples = Array.from({ length: 25 }, (_, index) => index / 24)
+  const shape = new THREE.Shape()
+  shape.moveTo(-0.5, profile(0))
+  for (const along of samples) shape.lineTo(along - 0.5, profile(along))
+  for (const along of [...samples].reverse()) shape.lineTo(along - 0.5, Math.max(profile(along) - thickness, 0))
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: false })
+  geometry.translate(0, 0, aside - width / 2)
+  return geometry
 }
 
 function createTrack(linkedSides: Side[]) {

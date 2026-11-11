@@ -1,3 +1,4 @@
+import { opposite } from '../stage/Grid.ts'
 import type { Piece, Railway } from './Railway.ts'
 
 export type Challenge = { goal: string; isMet: (railway: Railway) => boolean }
@@ -23,6 +24,16 @@ export const challenges: Challenge[] = [
       railway.planRoute()?.closed === true &&
       visitedPieces(railway).some((piece) => piece.kind === 'signal' && piece.go),
   },
+  {
+    goal: 'Faz o comboio passar por uma ponte.',
+    isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'bridge'),
+  },
+  { goal: 'Faz o comboio passar por cima e por baixo da ponte.', isMet: passesABridgeOverAndUnder },
+  {
+    goal: 'Põe uma agulha no caminho do comboio.',
+    isMet: (railway) => visitedPieces(railway).some((piece) => piece.kind === 'points'),
+  },
+  { goal: 'Usa a agulha para desviar o comboio.', isMet: isSentDownABranch },
   { goal: 'Faz um oito: o comboio passa pelo cruzamento nos dois sentidos.', isMet: passesACrossingBothWays },
   { goal: 'Planta três árvores ao lado da linha.', isMet: (railway) => treesBesideTheLine(railway) >= 3 },
 ]
@@ -31,10 +42,30 @@ function visitedPieces(railway: Railway): Piece[] {
   return (railway.planRoute()?.visits ?? []).flatMap(({ spot }) => railway.findPieceAt(spot) ?? [])
 }
 
+function passesABridgeOverAndUnder(railway: Railway) {
+  const visits = railway.planRoute()?.visits ?? []
+  return visits.some(({ spot }) => {
+    const bridge = railway.findPieceAt(spot)
+    if (bridge?.kind !== 'bridge') return false
+    const along = bridge.axis === 'horizontal' ? ['west', 'east'] : ['north', 'south']
+    const entries = visits
+      .filter((other) => other.spot.x === spot.x && other.spot.z === spot.z)
+      .map(({ enter }) => enter)
+    return entries.some((enter) => along.includes(enter)) && entries.some((enter) => !along.includes(enter))
+  })
+}
+
+function isSentDownABranch(railway: Railway) {
+  return (railway.planRoute()?.visits ?? []).some(
+    ({ spot, enter, exit }) =>
+      railway.findPieceAt(spot)?.kind === 'points' && exit !== undefined && exit !== opposite[enter],
+  )
+}
+
 function passesACrossingBothWays(railway: Railway) {
   const visits = railway.planRoute()?.visits ?? []
   return visits.some(({ spot }) => {
-    if (railway.listLinkedSides(spot).length < 4) return false
+    if (railway.findPieceAt(spot)?.kind !== 'track' || railway.listLinkedSides(spot).length < 4) return false
     const entries = visits
       .filter((other) => other.spot.x === spot.x && other.spot.z === spot.z)
       .map(({ enter }) => enter)

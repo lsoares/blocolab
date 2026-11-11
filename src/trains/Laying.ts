@@ -54,7 +54,7 @@ export class Laying {
     if (!spot) return
     canvas.setPointerCapture(event.pointerId)
     if (this.tool === 'eraser') return this.startErasing(spot)
-    if (this.isTappingASignalWithTheSignal(spot)) return this.toggleSignal(spot)
+    if (this.isTappingAControl(spot)) return this.useControl(spot)
     if (this.tool === 'track') return this.startLaying(spot)
     if (this.tool === 'train') return this.placeTrain(spot)
     this.gesture = 'turning'
@@ -124,8 +124,9 @@ export class Laying {
     this.view.hideGhost()
   }
 
-  private toggleSignal(spot: Spot) {
+  private useControl(spot: Spot) {
     this.railway.toggleSignalAt(spot)
+    this.railway.turnPointsAt(spot)
     this.onRailwayChanged()
   }
 
@@ -141,13 +142,14 @@ export class Laying {
     this.view.hideGhost()
   }
 
-  private isTappingASignalWithTheSignal(spot: Spot) {
-    return this.tool === 'signal' && this.railway.findPieceAt(spot)?.kind === 'signal'
+  private isTappingAControl(spot: Spot) {
+    const piece = this.railway.findPieceAt(spot)
+    return (this.tool === 'signal' && piece?.kind === 'signal') || (this.tool === 'points' && piece?.kind === 'points')
   }
 
   private previewAt(spot: Spot, axis: Axis) {
     if (this.tool === 'eraser') return this.previewErasure(spot)
-    if (this.isTappingASignalWithTheSignal(spot)) return this.view.hideGhost()
+    if (this.isTappingAControl(spot)) return this.view.hideGhost()
     if (this.tool === 'train') return this.previewTrain(spot)
     const piece = buildPiece(this.tool, spot, axis)
     if (piece) this.view.showPlacementGhost(piece)
@@ -188,7 +190,7 @@ export class Laying {
 
   private useToolAtCursor() {
     if (this.tool === 'eraser') this.erase(this.cursor)
-    else if (this.isTappingASignalWithTheSignal(this.cursor)) this.railway.toggleSignalAt(this.cursor)
+    else if (this.isTappingAControl(this.cursor)) this.useControl(this.cursor)
     else if (this.tool === 'train') this.railway.placeTrain(this.cursor)
     else this.place(buildPiece(this.tool, this.cursor, this.cursorAxis))
     this.onRailwayChanged()
@@ -205,7 +207,8 @@ const arrowSteps: Record<string, { dx: number; dz: number }> = {
 function buildPiece(tool: Tool, spot: Spot, axis: Axis): Piece | undefined {
   if (tool === 'track' || tool === 'tree') return { kind: tool, spot }
   if (tool === 'signal') return { kind: tool, spot, axis, go: false }
-  if (tool === 'station' || tool === 'tunnel') return { kind: tool, spot, axis }
+  if (tool === 'station' || tool === 'tunnel' || tool === 'bridge') return { kind: tool, spot, axis }
+  if (tool === 'points') return { kind: tool, spot, side: 'east' }
   return undefined
 }
 

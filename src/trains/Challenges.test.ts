@@ -116,7 +116,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt..', 't.t..', 'Mtttt', '..t.t', '..ttt'])
 
-    const met = challenges[6].isMet(railway)
+    const met = challenges[10].isMet(railway)
 
     assert.equal(met, true)
   })
@@ -125,7 +125,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['Mtt', 't.t', 'ttt'])
 
-    const met = challenges[6].isMet(railway)
+    const met = challenges[10].isMet(railway)
 
     assert.equal(met, false)
   })
@@ -134,7 +134,7 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt', 'aaa'])
 
-    const met = challenges[7].isMet(railway)
+    const met = challenges[11].isMet(railway)
 
     assert.equal(met, true)
   })
@@ -143,7 +143,84 @@ describe('Train challenges', () => {
     const railway = new Railway({ columns: 8, rows: 6 })
     draw(railway, ['ttt', '...', '...', 'aaa'])
 
+    const met = challenges[11].isMet(railway)
+
+    assert.equal(met, false)
+  })
+})
+
+describe('Bridge and points challenges', () => {
+  test('a bridge on the way meets the bridge challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MBtt'])
+
+    const met = challenges[6].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('a bridge off the way does not meet the bridge challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['Mtt', '...', 'B..'])
+
+    const met = challenges[6].isMet(railway)
+
+    assert.equal(met, false)
+  })
+
+  test('passing over and under a bridge meets the over and under challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['ttt..', 't.t..', 'MtBtt', '..t.t', '..ttt'])
+
     const met = challenges[7].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('passing over a bridge once does not meet the over and under challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MBtt'])
+
+    const met = challenges[7].isMet(railway)
+
+    assert.equal(met, false)
+  })
+
+  test('points on the way meet the points challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MPt', '.t.'])
+
+    const met = challenges[8].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('points sending the train down the branch meet the branch challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MPt', '.t.'])
+    railway.turnPointsAt({ x: 1, z: 0 })
+    railway.turnPointsAt({ x: 1, z: 0 })
+
+    const met = challenges[9].isMet(railway)
+
+    assert.equal(met, true)
+  })
+
+  test('points leaving the train straight on do not meet the branch challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['MPt', '.t.'])
+    railway.turnPointsAt({ x: 1, z: 0 })
+
+    const met = challenges[9].isMet(railway)
+
+    assert.equal(met, false)
+  })
+
+  test('a bridge is not a crossing for the figure of eight challenge', () => {
+    const railway = new Railway({ columns: 8, rows: 6 })
+    draw(railway, ['ttt..', 't.t..', 'MtBtt', '..t.t', '..ttt'])
+
+    const met = challenges[10].isMet(railway)
 
     assert.equal(met, false)
   })
@@ -167,6 +244,8 @@ function pieceFor(symbol: string, spot: { x: number; z: number }): Piece | undef
   if (symbol === 'a') return { kind: 'tree', spot }
   if (symbol === 'E') return { kind: 'station', spot, axis: 'horizontal' }
   if (symbol === 'U') return { kind: 'tunnel', spot, axis: 'horizontal' }
+  if (symbol === 'B') return { kind: 'bridge', spot, axis: 'horizontal' }
+  if (symbol === 'P') return { kind: 'points', spot, side: 'east' }
   if (symbol === 'R' || symbol === 'G') return { kind: 'signal', spot, axis: 'horizontal', go: false }
   return undefined
 }
