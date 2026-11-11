@@ -11,6 +11,7 @@
   --control-size: 3.5rem;
   --battery: #59636f;
   --gold: #d9b44a;
+  --copper: #d98e32;
   --wire: #2b6cb0;
   --switch: #c0453f;
   --bulb: #ffd84a;
@@ -77,19 +78,7 @@ body {
   }
 }
 
-.camera {
-  position: absolute;
-  right: calc(var(--space) * 2);
-  bottom: calc(var(--space) * 2);
-  display: flex;
-  gap: var(--space);
-  margin: 0;
-  padding: 0;
-  border: none;
-}
-
-.toolbar,
-.camera {
+.toolbar {
   label,
   button {
     position: relative;
@@ -235,4 +224,16 @@ main {
 
 .toolbar[hidden] {
   display: none;
+}
+
+.piece-name {
+  position: absolute;
+  padding: 0.25rem 0.625rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 2px 8px var(--shadow);
+  z-index: 2;
 }

@@ -130,3 +130,52 @@ test('a wire straight across the battery is a short circuit', async ({ page }) =
 
   await expect(circuit.getStatus()).toHaveText('6 peças, curto-circuito')
 })
+
+test('hovering a piece says what it is', async ({ page }) => {
+  const circuit = new CircuitPage(page)
+  await circuit.open()
+  await circuit.getBoard().click()
+
+  await circuit.hoverBoard()
+
+  await expect(circuit.getPieceName()).toHaveText('Pilha')
+})
+
+test('placing a piece over another one replaces it', async ({ page }) => {
+  const circuit = new CircuitPage(page)
+  await circuit.open()
+  await circuit.getBoard().click()
+  await circuit.choosePiece('Lâmpada')
+  await circuit.getBoard().click()
+
+  await circuit.hoverBoard()
+
+  await expect(circuit.getPieceName()).toHaveText('Lâmpada (apagada)')
+})
+
+test('pieces turn by themselves to meet the wires around them', async ({ page }) => {
+  const circuit = new CircuitPage(page)
+  await circuit.open()
+  await circuit.choosePiece('Pilha')
+  await circuit.moveCursor('ArrowLeft')
+  await circuit.placeAtCursor()
+  await circuit.choosePiece('Lâmpada')
+  await circuit.moveCursor('ArrowRight', 'ArrowRight')
+  await circuit.placeAtCursor()
+  await circuit.choosePiece('Fio')
+  await circuit.moveCursor('ArrowUp')
+  await circuit.placeAtCursor()
+  await circuit.moveCursor('ArrowLeft')
+  await circuit.placeAtCursor()
+  await circuit.moveCursor('ArrowLeft')
+  await circuit.placeAtCursor()
+  await circuit.moveCursor('ArrowDown', 'ArrowDown')
+  await circuit.placeAtCursor()
+  await circuit.moveCursor('ArrowRight')
+  await circuit.placeAtCursor()
+  await circuit.moveCursor('ArrowRight')
+
+  await circuit.placeAtCursor()
+
+  await expect(circuit.getStatus()).toHaveText('8 peças, 1 lâmpada acesa')
+})

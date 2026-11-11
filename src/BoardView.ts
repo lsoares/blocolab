@@ -21,7 +21,7 @@ export class BoardView {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     this.renderer.setPixelRatio(window.devicePixelRatio)
     this.renderer.shadowMap.enabled = true
-    this.camera = new BoardCamera(size, reducedMotion)
+    this.camera = new BoardCamera(size)
 
     this.surface.position.set(-size.columns / 2, 0, -size.rows / 2)
     this.surface.add(createPlate(size), createStuds(size), ...createRimWall(size), this.pieces, this.ghost)
@@ -35,7 +35,6 @@ export class BoardView {
     const timer = new THREE.Timer()
     this.renderer.setAnimationLoop((timestamp) => {
       timer.update(timestamp)
-      this.camera.advance(timer.getDelta())
       for (const animate of this.animations) animate(timer.getElapsed())
       this.renderer.render(this.scene, this.camera.camera)
     })
@@ -194,12 +193,17 @@ function createTile(color: string) {
 }
 
 function createBattery(): PieceParts {
+  const sign = (size: [number, number, number], position: [number, number, number]) => box(size, '#ffffff', position)
   return {
     parts: [
-      ...createTile('#3a4350'),
-      lyingCylinder(0.28, 0.62, '#59636f', [0, 0.36, 0]),
-      lyingCylinder(0.285, 0.18, '#e8b04a', [-0.12, 0.36, 0]),
-      lyingCylinder(0.1, 0.12, '#d9b44a', [0.37, 0.36, 0]),
+      ...createTile('#cfd5dc'),
+      lyingCylinder(0.27, 0.6, '#2b2d33', [0, 0.34, 0]),
+      lyingCylinder(0.275, 0.3, '#d98e32', [0.15, 0.34, 0]),
+      lyingCylinder(0.27, 0.03, '#9aa3ad', [-0.315, 0.34, 0]),
+      lyingCylinder(0.1, 0.1, '#e8edf2', [0.35, 0.34, 0]),
+      sign([0.16, 0.01, 0.04], [0.15, 0.62, 0]),
+      sign([0.04, 0.01, 0.16], [0.15, 0.62, 0]),
+      sign([0.14, 0.01, 0.04], [-0.12, 0.615, 0]),
     ],
   }
 }

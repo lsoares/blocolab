@@ -32,6 +32,15 @@ export class CircuitPage {
     return this.page.getByRole('region', { name: 'Desafio' })
   }
 
+  getPieceName() {
+    return this.page.getByRole('tooltip')
+  }
+
+  async hoverBoard() {
+    await this.page.mouse.move(0, 0)
+    await this.getBoard().hover()
+  }
+
   getNextChallengeButton() {
     return this.page.getByRole('button', { name: 'Próximo desafio' })
   }

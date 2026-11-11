@@ -14,8 +14,9 @@
           <input type="radio" name="tool" value="battery" checked />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <rect x="2" y="7" width="17" height="10" rx="2" fill="var(--battery)" />
-            <rect x="19" y="10" width="3" height="4" rx="1" fill="var(--gold)" />
-            <path d="M7 12h5M9.5 9.5v5" stroke="white" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M11 7h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6z" fill="var(--copper)" />
+            <rect x="19" y="10" width="3.2" height="4" rx="1" fill="var(--socket)" />
+            <path d="M13.5 12h4M15.5 10v4M4.5 12h4" stroke="var(--control)" stroke-width="1.5" stroke-linecap="round" />
           </svg>
           <span class="visually-hidden">Pilha</span>
         </label>
@@ -78,11 +79,7 @@
       </section>
       <!-- biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: the board is a keyboard-driven widget, which is what the application role announces -->
       <canvas id="world" role="application" tabindex="0" aria-label="Tabuleiro"></canvas>
-      <fieldset class="camera">
-        <legend class="visually-hidden">Câmara</legend>
-        <button type="button" data-camera="zoom-in" aria-label="Aproximar" title="Aproximar">+</button>
-        <button type="button" data-camera="zoom-out" aria-label="Afastar" title="Afastar">−</button>
-      </fieldset>
+      <div class="piece-name" role="tooltip" hidden></div>
       <p class="no-3d" role="alert" hidden>
         Este browser não consegue mostrar o tabuleiro em 3D. Experimenta numa versão recente do Chrome, Firefox, Safari ou Edge.
       </p>

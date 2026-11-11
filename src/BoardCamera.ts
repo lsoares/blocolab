@@ -3,51 +3,15 @@ import type { BoardSize } from './Board.ts'
 
 export class BoardCamera {
   readonly camera = new THREE.OrthographicCamera()
-  private zoomLevel = 0
-  private zoomSpeed = 0
-  private aspect = 1
 
-  constructor(
-    private readonly board: BoardSize,
-    private readonly reducedMotion: MediaQueryList,
-  ) {}
-
-  zoomIn() {
-    this.pushZoom(0.35)
-  }
-
-  zoomOut() {
-    this.pushZoom(-0.35)
-  }
-
-  zoomWithWheel(scrolledPixels: number) {
-    this.pushZoom(-scrolledPixels * 0.0015)
-  }
+  constructor(private readonly board: BoardSize) {}
 
   fitTo(width: number, height: number) {
-    this.aspect = width / height
-  }
-
-  advance(seconds: number) {
-    const glidedLevel = this.zoomLevel + this.zoomSpeed * seconds
-    this.zoomLevel = clampZoomLevel(glidedLevel)
-    this.zoomSpeed = glidedLevel === this.zoomLevel ? this.zoomSpeed * Math.exp(-seconds * zoomFrictionPerSecond) : 0
-    this.camera.zoom = Math.exp(this.zoomLevel)
-    this.placeCamera()
-  }
-
-  private pushZoom(distance: number) {
-    if (this.reducedMotion.matches) this.zoomLevel = clampZoomLevel(this.zoomLevel + distance)
-    else this.zoomSpeed += distance * zoomFrictionPerSecond
-  }
-
-  private placeCamera() {
-    const elevation = (70 * Math.PI) / 180
-    const halfWidth = (this.board.columns + 3) / 2
-    const halfHeight = Math.max((this.board.rows * Math.sin(elevation) + 3) / 2, halfWidth / this.aspect)
+    const halfWidth = (this.board.columns + margin) / 2
+    const halfHeight = Math.max((this.board.rows * Math.sin(elevation) + margin) / 2, halfWidth / (width / height))
     Object.assign(this.camera, {
-      left: -halfHeight * this.aspect,
-      right: halfHeight * this.aspect,
+      left: (-halfHeight * width) / height,
+      right: (halfHeight * width) / height,
       top: halfHeight,
       bottom: -halfHeight,
       near: 0.1,
@@ -59,8 +23,13 @@ export class BoardCamera {
   }
 }
 
-const zoomFrictionPerSecond = 4
-
-function clampZoomLevel(level: number) {
-  return Math.min(Math.max(level, Math.log(0.7)), Math.log(2))
+export function measureBoardThatFits(width: number, height: number): BoardSize {
+  const cellPixels = 46
+  return {
+    columns: Math.min(Math.max(Math.round(width / cellPixels - margin), 8), 30),
+    rows: Math.min(Math.max(Math.round((height / cellPixels - margin) / Math.sin(elevation)), 6), 20),
+  }
 }
+
+const elevation = (70 * Math.PI) / 180
+const margin = 2.4

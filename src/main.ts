@@ -1,5 +1,6 @@
 import './style.css'
-import { Board } from './Board.ts'
+import { Board, type Piece } from './Board.ts'
+import { measureBoardThatFits } from './BoardCamera.ts'
 import { BoardView } from './BoardView.ts'
 import { challenges, isMet } from './Challenges.ts'
 import { Placing, type Tool } from './Placing.ts'
@@ -10,9 +11,7 @@ if (document.createElement('canvas').getContext('webgl2')) startGame(canvas)
 else showThatThe3dBoardIsUnavailable(canvas)
 
 function startGame(canvas: HTMLCanvasElement) {
-  const board = new Board(
-    canvas.clientHeight > canvas.clientWidth ? { columns: 8, rows: 12 } : { columns: 12, rows: 8 },
-  )
+  const board = new Board(measureBoardThatFits(canvas.clientWidth, canvas.clientHeight))
   const view = new BoardView(canvas, board.size, matchMedia('(prefers-reduced-motion: reduce)'))
   const status = document.querySelector('output')
   const undoButton = document.querySelector<HTMLButtonElement>('.undo')
@@ -67,19 +66,18 @@ function startGame(canvas: HTMLCanvasElement) {
     undo()
   })
 
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-camera]')) {
-    button.addEventListener('click', () =>
-      button.dataset.camera === 'zoom-in' ? view.camera.zoomIn() : view.camera.zoomOut(),
-    )
-  }
-  canvas.addEventListener(
-    'wheel',
-    (event) => {
-      event.preventDefault()
-      view.camera.zoomWithWheel(event.deltaMode === WheelEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY)
-    },
-    { passive: false },
-  )
+  const pieceName = document.querySelector<HTMLElement>('.piece-name')
+  canvas.addEventListener('pointermove', (event) => {
+    const spot = event.buttons === 0 ? view.pickSpot(event) : undefined
+    const piece = spot && board.findPieceAt(spot)
+    if (!pieceName || !piece) return void pieceName?.setAttribute('hidden', '')
+    pieceName.textContent = nameOf(piece, board)
+    const area = canvas.getBoundingClientRect()
+    pieceName.style.left = `${event.clientX - area.left + 14}px`
+    pieceName.style.top = `${event.clientY - area.top + 14}px`
+    pieceName.removeAttribute('hidden')
+  })
+  canvas.addEventListener('pointerleave', () => pieceName?.setAttribute('hidden', ''))
 
   showBoard()
   view.start()
@@ -127,4 +125,16 @@ function rememberLevel(level: number) {
   } catch {
     return
   }
+}
+
+function nameOf(piece: Piece, board: Board) {
+  const working = board.isPoweredAt(piece.spot)
+  return {
+    battery: 'Pilha',
+    wire: 'Fio',
+    switch: `Interruptor (${piece.kind === 'switch' && piece.closed ? 'fechado' : 'aberto'})`,
+    lamp: `Lâmpada (${working ? 'acesa' : 'apagada'})`,
+    motor: `Motor (${working ? 'a rodar' : 'parado'})`,
+    buzzer: `Campainha (${working ? 'a tocar' : 'calada'})`,
+  }[piece.kind]
 }
