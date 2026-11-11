@@ -4,7 +4,7 @@ import type { BoardView } from './BoardView.ts'
 export type Tool = Piece['kind'] | 'eraser'
 
 export class Placing {
-  private tool: Tool = 'battery'
+  private tool: Tool = 'wire'
   private gesture: 'none' | 'turning' | 'wiring' | 'erasing' = 'none'
   private gestureStart: Spot = { x: 0, z: 0 }
   private wiredUpTo: Spot = { x: 0, z: 0 }

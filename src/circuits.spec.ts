@@ -154,9 +154,18 @@ test('a wire straight across the battery is a short circuit', async ({ page }) =
   await expect(circuit.getStatus()).toHaveText('6 peças, curto-circuito')
 })
 
+test('the wire is the tool chosen when the game opens', async ({ page }) => {
+  const circuit = new CircuitPage(page)
+
+  await circuit.open()
+
+  await expect(page.getByRole('radio', { name: 'Fio' })).toBeChecked()
+})
+
 test('hovering a piece says what it is', async ({ page }) => {
   const circuit = new CircuitPage(page)
   await circuit.open()
+  await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
 
   await circuit.hoverBoard()

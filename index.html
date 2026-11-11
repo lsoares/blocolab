@@ -10,8 +10,17 @@
     <aside class="toolbar">
       <fieldset>
         <legend class="visually-hidden">Peça</legend>
+        <label data-name="Fio">
+          <input type="radio" name="tool" value="wire" checked />
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M5 12h14" stroke="var(--wire)" stroke-width="4" stroke-linecap="round" />
+            <circle cx="4" cy="12" r="2.4" fill="var(--gold)" />
+            <circle cx="20" cy="12" r="2.4" fill="var(--gold)" />
+          </svg>
+          <span class="visually-hidden">Fio</span>
+        </label>
         <label data-name="Pilha">
-          <input type="radio" name="tool" value="battery" checked />
+          <input type="radio" name="tool" value="battery" />
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <rect x="2" y="7" width="17" height="10" rx="2" fill="var(--battery)" />
             <path d="M11 7h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6z" fill="var(--copper)" />
@@ -19,15 +28,6 @@
             <path d="M13.5 12h4M15.5 10v4M4.5 12h4" stroke="var(--control)" stroke-width="1.5" stroke-linecap="round" />
           </svg>
           <span class="visually-hidden">Pilha</span>
-        </label>
-        <label data-name="Fio">
-          <input type="radio" name="tool" value="wire" />
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="M5 12h14" stroke="var(--wire)" stroke-width="4" stroke-linecap="round" />
-            <circle cx="4" cy="12" r="2.4" fill="var(--gold)" />
-            <circle cx="20" cy="12" r="2.4" fill="var(--gold)" />
-          </svg>
-          <span class="visually-hidden">Fio</span>
         </label>
         <label data-name="Interruptor">
           <input type="radio" name="tool" value="switch" />
@@ -62,13 +62,16 @@
           </svg>
           <span class="visually-hidden">Campainha</span>
         </label>
+      </fieldset>
+      <fieldset class="corrections">
+        <legend class="visually-hidden">Corrigir</legend>
         <label data-name="Borracha">
           <input type="radio" name="tool" value="eraser" />
           <span aria-hidden="true">🧽</span>
           <span class="visually-hidden">Borracha</span>
         </label>
+        <button type="button" class="undo" aria-label="Desfazer" data-name="Desfazer" disabled>↶</button>
       </fieldset>
-      <button type="button" class="undo" aria-label="Desfazer" data-name="Desfazer" disabled>↶</button>
       <output class="visually-hidden" aria-live="polite">0 peças</output>
     </aside>
     <main>
