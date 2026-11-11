@@ -24,9 +24,14 @@ a meio num `git stash`). O jogo passa a ser **como um kit de circuitos de encaix
   arrastar com outra peça decide para onde ela está virada; tocar num interruptor
   liga/desliga; a borracha apaga só o que toca.
 
-Próximas ideias deste jogo: desafios ("acende duas lâmpadas com uma só pilha"), lâmpadas
-em série vs. em paralelo (brilho), mais pilhas, resistência, íman, ventoinha no motor,
-som de verdade na campainha, e objetos que caem no tabuleiro (o muro serve para isso).
+**Desafios** (feitos): 7 objetivos seguidos, da lâmpada até "lâmpada, motor e campainha ao
+mesmo tempo". Cada um tem uma dica; o botão "Próximo desafio" só aparece ao conseguir e o
+progresso fica guardado no browser. O tabuleiro começa vazio em cada desafio.
+
+Próximas ideias deste jogo: mais desafios (em série vs. em paralelo, brilho da lâmpada,
+"acende com o interruptor aberto"), saltar um desafio difícil, mais pilhas, resistência,
+íman, ventoinha no motor, som de verdade na campainha, e objetos que caem no tabuleiro
+(o muro serve para isso).
 
 As secções abaixo (blocos, rampas, água) são ideias anteriores; guardam-se para outros jogos.
 
