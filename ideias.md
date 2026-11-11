@@ -239,6 +239,20 @@ Programação, lógica, luz, ímanes, multijogador, partilha online, gráficos, 
 
 ---
 
+## Objetos giros (pedido em 2026-11-11)
+
+Objetos que se combinam com os blocos, por esta ordem:
+
+1. **Bolas** — feito (fatia 3a): rolam pelas rampas, batem nos cubos; ▶ Correr / ■ Parar.
+2. **Alvo 🚩** — desafio "leva a bola ao alvo" (fatia 3b).
+3. **Ventoinha** — empurra bolas numa direção (força numa zona; fácil com o Rapier).
+4. **Eletricidade** — pilha, fio, interruptor, lâmpada, motor. Ligações: uma bola que carrega
+   num botão acende uma lâmpada; um motor liga a ventoinha. Modelo: grafo de ligações entre
+   objetos vizinhos, sem física de circuitos a sério.
+5. Mais tarde: trampolim, íman, porta que abre com um botão.
+
+---
+
 ## 6. Faixas etárias (5–16 é muita coisa)
 
 | Idade | Interface                                                                      | Tipo de desafio                                    |
