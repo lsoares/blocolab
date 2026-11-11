@@ -33,12 +33,14 @@ tem casas de ~46 px medidas a partir do ecrã, por isso ocupa o ecrã todo.
 **Som** (feito): a campainha zumbe de verdade enquanto toca; pára ao abrir o circuito e quando
 o separador fica escondido. Não há botão de silêncio (o volume é baixo); fica como ideia.
 
-**Desafios** (feitos): 7 objetivos seguidos, da lâmpada até "lâmpada, motor e campainha ao
-mesmo tempo". Cada um tem uma dica; o botão "Próximo desafio" só aparece ao conseguir e o
-progresso fica guardado no browser. O tabuleiro começa vazio em cada desafio.
+**Desafios** (feitos): 12 objetivos seguidos, da lâmpada até ao curto-circuito de propósito.
+Cada um tem uma dica; o botão "Próximo desafio" só aparece ao conseguir, "Saltar" serve para
+um desafio difícil, e o progresso fica guardado no browser. O tabuleiro começa vazio em cada
+desafio. Alguns objetivos são verificados "a imaginar" o que acontece se se tirar uma peça:
+lâmpadas em paralelo (a outra continua acesa), em série (a outra apaga) e interruptor geral
+(abri-lo pára tudo).
 
-Próximas ideias deste jogo: mais desafios (em série vs. em paralelo, brilho da lâmpada,
-"acende com o interruptor aberto"), saltar um desafio difícil, mais pilhas, resistência,
+Próximas ideias deste jogo: brilho da lâmpada (série vs. paralelo), mais pilhas, resistência,
 íman, ventoinha no motor, e objetos que caem no tabuleiro (o muro serve para isso).
 
 As secções abaixo (blocos, rampas, água) são ideias anteriores; guardam-se para outros jogos.
