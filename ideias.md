@@ -20,9 +20,9 @@ a meio num `git stash`). O jogo passa a ser **como um kit de circuitos de encaix
 - A corrente é **ao vivo**: não há ▶. Fecha o circuito e a lâmpada acende, o motor roda,
   a campainha toca. Um interruptor aberto corta o circuito; um fio direto de uma ponta
   da pilha à outra é **curto-circuito**.
-- Gestos, sem botões a mais: tocar põe a peça; arrastar com o fio desenha um troço;
-  arrastar com outra peça decide para onde ela está virada; tocar num interruptor
-  liga/desliga; a borracha apaga só o que toca.
+- Gestos, sem botões a mais: tocar põe a peça; arrastar com o fio **desenha logo**, casa a casa,
+  com curvas (só preenche casas vazias); arrastar com outra peça decide para onde ela está virada;
+  tocar num interruptor liga/desliga; a borracha apaga só o que toca.
 
 **Ajustes pedidos a ver o jogo** (feitos): as peças com duas pontas **viram-se sozinhas** para
 encostar aos fios que têm à volta; pôr uma peça **por cima** de outra substitui-a (um troço de
