@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { IsometricCamera } from './IsometricCamera.ts'
-import type { Block, Size, Spot, World } from './World.ts'
+import type { Block, Facing, Piece, Size, Spot, World } from './World.ts'
 
 export class WorldView {
   readonly camera: IsometricCamera
@@ -9,10 +9,11 @@ export class WorldView {
   private readonly board = new THREE.Group()
   private readonly ground: THREE.Mesh
   private readonly cubes: THREE.InstancedMesh
-  private readonly ramps: THREE.InstancedMesh
+  private readonly rampBases: THREE.InstancedMesh
+  private readonly slopes: THREE.InstancedMesh
   private readonly ghost = createGhost()
   private readonly raycaster = new THREE.Raycaster()
-  private readonly shownBlocks = new Map<THREE.Object3D, Block[]>()
+  private readonly shownSpots = new Map<THREE.Object3D, Spot[]>()
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -27,9 +28,10 @@ export class WorldView {
     this.board.position.set(-size.width / 2, 0, -size.depth / 2)
     this.scene.add(this.board)
     this.ground = createGround(size)
-    this.cubes = createBlocks(new THREE.BoxGeometry(1, 1, 1), '#c9925f', size)
-    this.ramps = createBlocks(createRampGeometry(), '#e8b46a', size)
-    this.board.add(this.ground, createGridLines(size), this.cubes, this.ramps, this.ghost)
+    this.cubes = createPieces(new THREE.BoxGeometry(1, 1, 1), '#c9925f', size)
+    this.rampBases = createPieces(new THREE.BoxGeometry(1, 1, 1), '#e8b46a', size)
+    this.slopes = createPieces(createRampGeometry(), '#e8b46a', size)
+    this.board.add(this.ground, createGridLines(size), this.cubes, this.rampBases, this.slopes, this.ghost)
     this.scene.add(...createLights(size))
 
     new ResizeObserver(() => this.fitToCanvas()).observe(canvas)
@@ -46,14 +48,21 @@ export class WorldView {
   }
 
   show(world: World) {
-    const blocks = world.listBlocks()
+    const pieces = world.listPieces()
+    const ramps = pieces.filter((piece) => piece.kind === 'ramp')
     this.showInstances(
       this.cubes,
-      blocks.filter((block) => block.kind === 'cube'),
+      pieces
+        .filter((piece) => piece.kind === 'cube')
+        .map(({ spot, height }) => ({ spot, placement: columnOf(spot, 0, height) })),
     )
     this.showInstances(
-      this.ramps,
-      blocks.filter((block) => block.kind === 'ramp'),
+      this.rampBases,
+      ramps.filter(({ low }) => low > 0).map(({ spot, low }) => ({ spot, placement: columnOf(spot, 0, low) })),
+    )
+    this.showInstances(
+      this.slopes,
+      ramps.map((ramp) => ({ spot: ramp.spot, placement: slopeOf(ramp) })),
     )
   }
 
@@ -65,38 +74,56 @@ export class WorldView {
     this.showShapeGhost(block, this.ghost.blockedLook)
   }
 
-  showErasureGhost(block: Block) {
+  showErasureGhost(piece: Piece) {
     this.ghost.cube.visible = false
     this.ghost.ramp.visible = false
     this.ghost.erasure.visible = true
-    this.moveGhostOnto(block)
+    this.ghost.matrix.copy(columnOf(piece.spot, 0, piece.kind === 'cube' ? piece.height : piece.high))
+    this.ghost.visible = true
   }
 
   hideGhost() {
     this.ghost.visible = false
   }
 
-  pickBlock(pointer: PointerEvent): Block | undefined {
-    this.aimAt(pointer)
-    const [hit] = this.raycaster.intersectObjects([this.cubes, this.ramps, this.ground], false)
-    if (hit?.instanceId === undefined) return undefined
-    return this.shownBlocks.get(hit.object)?.[hit.instanceId]
-  }
-
-  pickSpot(pointer: PointerEvent): Spot | undefined {
-    this.aimAt(pointer)
-    const [hit] = this.raycaster.intersectObjects([this.cubes, this.ramps, this.ground], false)
+  pickTouchedSpot(pointer: PointerEvent): Spot | undefined {
+    const hit = this.findHit(pointer)
     if (!hit) return undefined
-    const { x, z } = this.board.worldToLocal(this.raycaster.ray.at(hit.distance + 0.01, new THREE.Vector3()))
-    return { x: Math.floor(x), z: Math.floor(z) }
+    return this.findHitPiece(hit) ?? floorOf(this.board.worldToLocal(hit.point.clone()))
   }
 
-  private showInstances(mesh: THREE.InstancedMesh, blocks: Block[]) {
-    this.shownBlocks.set(mesh, blocks)
-    blocks.forEach((block, index) => {
-      mesh.setMatrixAt(index, placementOf(block))
+  pickSpotInFront(pointer: PointerEvent): Spot | undefined {
+    const hit = this.findHit(pointer)
+    if (!hit) return undefined
+    const piece = this.findHitPiece(hit)
+    if (!piece || !hit.face || !(hit.object instanceof THREE.InstancedMesh)) {
+      return floorOf(this.board.worldToLocal(hit.point.clone()))
+    }
+    const placement = new THREE.Matrix4()
+    hit.object.getMatrixAt(hit.instanceId ?? 0, placement)
+    const normal = hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(placement)).normalize()
+    if (Math.abs(normal.y) > 0.5) return piece
+    return { x: piece.x + Math.round(normal.x), z: piece.z + Math.round(normal.z) }
+  }
+
+  private findHit(pointer: PointerEvent) {
+    this.aimAt(pointer)
+    return this.raycaster.intersectObjects([this.cubes, this.rampBases, this.slopes, this.ground], false)[0]
+  }
+
+  private findHitPiece(hit: THREE.Intersection) {
+    return hit.instanceId === undefined ? undefined : this.shownSpots.get(hit.object)?.[hit.instanceId]
+  }
+
+  private showInstances(mesh: THREE.InstancedMesh, pieces: { spot: Spot; placement: THREE.Matrix4 }[]) {
+    this.shownSpots.set(
+      mesh,
+      pieces.map(({ spot }) => spot),
+    )
+    pieces.forEach(({ placement }, index) => {
+      mesh.setMatrixAt(index, placement)
     })
-    mesh.count = blocks.length
+    mesh.count = pieces.length
     mesh.instanceMatrix.needsUpdate = true
     mesh.computeBoundingSphere()
   }
@@ -116,10 +143,6 @@ export class WorldView {
     this.ghost.cube.material = look
     this.ghost.ramp.material = look
     this.ghost.erasure.visible = false
-    this.moveGhostOnto(block)
-  }
-
-  private moveGhostOnto(block: Block) {
     this.ghost.matrix.copy(placementOf(block))
     this.ghost.visible = true
   }
@@ -131,6 +154,27 @@ export class WorldView {
   }
 }
 
+function floorOf({ x, z }: THREE.Vector3): Spot {
+  return { x: Math.floor(x), z: Math.floor(z) }
+}
+
+function columnOf(spot: Spot, bottom: number, top: number) {
+  return new THREE.Matrix4()
+    .makeTranslation(spot.x + 0.5, (bottom + top) / 2, spot.z + 0.5)
+    .multiply(new THREE.Matrix4().makeScale(1, top - bottom, 1))
+}
+
+function slopeOf({ spot, facing, low, high }: Extract<Piece, { kind: 'ramp' }>) {
+  return new THREE.Matrix4()
+    .makeTranslation(spot.x + 0.5, (low + high) / 2, spot.z + 0.5)
+    .multiply(new THREE.Matrix4().makeRotationY(turnOf(facing)))
+    .multiply(new THREE.Matrix4().makeScale(1, high - low, 1))
+}
+
+function turnOf(facing: Facing) {
+  return { east: 0, north: Math.PI / 2, west: Math.PI, south: -Math.PI / 2 }[facing]
+}
+
 function placementOf(block: Block) {
   const { origin, size } = block
   const center = new THREE.Matrix4().makeTranslation(
@@ -140,9 +184,8 @@ function placementOf(block: Block) {
   )
   if (block.kind === 'cube') return center.multiply(new THREE.Matrix4().makeScale(size.width, size.height, size.depth))
   const runsAlongX = block.facing === 'east' || block.facing === 'west'
-  const turn = { east: 0, north: Math.PI / 2, west: Math.PI, south: -Math.PI / 2 }[block.facing]
   return center
-    .multiply(new THREE.Matrix4().makeRotationY(turn))
+    .multiply(new THREE.Matrix4().makeRotationY(turnOf(block.facing)))
     .multiply(
       runsAlongX
         ? new THREE.Matrix4().makeScale(size.width, size.height, size.depth)
@@ -166,7 +209,7 @@ function createGridLines({ width, depth }: Size) {
   return grid
 }
 
-function createBlocks(geometry: THREE.BufferGeometry, color: string, { width, height, depth }: Size) {
+function createPieces(geometry: THREE.BufferGeometry, color: string, { width, height, depth }: Size) {
   const blocks = new THREE.InstancedMesh(geometry, new THREE.MeshLambertMaterial({ color }), width * height * depth)
   blocks.count = 0
   blocks.castShadow = true

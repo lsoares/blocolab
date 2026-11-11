@@ -79,7 +79,7 @@ export class Painting {
   }
 
   private erase(spot: Spot) {
-    this.world.eraseBlockAt(spot)
+    this.world.eraseAt(spot)
     this.onWorldChanged()
     this.view.hideGhost()
   }
@@ -91,9 +91,9 @@ export class Painting {
   }
 
   private preview(spot: Spot) {
-    const block = this.world.findBlockAt(spot)
+    const piece = this.world.findPieceAt(spot)
     if (this.tool !== 'eraser') this.previewBlock(this.draw(this.tool, spot))
-    else if (block) this.view.showErasureGhost(block)
+    else if (piece) this.view.showErasureGhost(piece)
     else this.view.hideGhost()
   }
 
@@ -103,7 +103,7 @@ export class Painting {
   }
 
   private findSpot(event: PointerEvent) {
-    const spot = this.view.pickSpot(event)
+    const spot = this.tool === 'eraser' ? this.view.pickTouchedSpot(event) : this.view.pickSpotInFront(event)
     return spot && this.world.isInside(spot) ? spot : undefined
   }
 
@@ -131,7 +131,7 @@ export class Painting {
   }
 
   private useToolAtCursor() {
-    if (this.tool === 'eraser') this.world.eraseBlockAt(this.cursor)
+    if (this.tool === 'eraser') this.world.eraseAt(this.cursor)
     else this.world.placeBlock(this.draw(this.tool, this.cursor))
     this.onWorldChanged()
   }

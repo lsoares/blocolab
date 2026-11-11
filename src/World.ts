@@ -8,10 +8,14 @@ export type Block =
   | { kind: 'cube'; origin: Spot; size: Size }
   | { kind: 'ramp'; origin: Spot; size: Size; facing: Facing }
 
+export type Piece =
+  | { kind: 'cube'; spot: Spot; height: number }
+  | { kind: 'ramp'; spot: Spot; facing: Facing; low: number; high: number }
+
 export class World {
   readonly size: Size
-  private blocks: Block[] = []
-  private readonly undoable: Block[][] = []
+  private placed: Placed[] = []
+  private readonly undoable: Placed[][] = []
   private stroke: 'none' | 'unchanged' | 'changed' = 'none'
 
   constructor(size: Size) {
@@ -20,17 +24,20 @@ export class World {
 
   placeBlock(block: Block) {
     if (!this.hasRoomFor(block)) return
-    this.change([...this.blocks, block])
+    this.change([...this.placed, { block, erased: [] }])
   }
 
   hasRoomFor(block: Block) {
-    return this.fits(block) && !this.blocks.some((placed) => overlaps(placed, block))
+    return this.fits(block) && spotsOf(block).every((spot) => !this.findBlockAt(spot))
   }
 
-  eraseBlockAt(spot: Spot) {
-    const block = this.findBlockAt(spot)
-    if (!block) return
-    this.change(this.blocks.filter((placed) => placed !== block))
+  eraseAt(spot: Spot) {
+    const target = this.placed.find((placed) => covers(placed, spot))
+    if (!target) return
+    const erased = [...target.erased, spot]
+    const rest = this.placed.filter((placed) => placed !== target)
+    if (erased.length === spotsOf(target.block).length) this.change(rest)
+    else this.change([...rest, { block: target.block, erased }])
   }
 
   startStroke() {
@@ -43,23 +50,35 @@ export class World {
 
   undo() {
     const previous = this.undoable.pop()
-    if (previous) this.blocks = previous
+    if (previous) this.placed = previous
   }
 
   canUndo() {
     return this.undoable.length > 0
   }
 
-  findBlockAt(spot: Spot) {
-    return this.blocks.find((block) => overlaps(block, { origin: spot, size: { width: 1, height: 1, depth: 1 } }))
+  findPieceAt(spot: Spot) {
+    return this.listPieces().find((piece) => piece.spot.x === spot.x && piece.spot.z === spot.z)
   }
 
   listBlocks() {
-    return [...this.blocks]
+    return this.placed.map(({ block }) => block)
+  }
+
+  listPieces(): Piece[] {
+    return this.placed.flatMap(({ block, erased }) =>
+      spotsOf(block)
+        .filter((spot) => !erased.some((gone) => isSameSpot(gone, spot)))
+        .map((spot) => cutPiece(block, spot)),
+    )
   }
 
   isInside({ x, z }: Spot) {
     return x >= 0 && x < this.size.width && z >= 0 && z < this.size.depth
+  }
+
+  private findBlockAt(spot: Spot) {
+    return this.placed.find((placed) => covers(placed, spot))?.block
   }
 
   private fits({ origin, size }: Block) {
@@ -70,18 +89,48 @@ export class World {
     )
   }
 
-  private change(blocks: Block[]) {
-    if (this.stroke !== 'changed') this.undoable.push(this.blocks)
+  private change(placed: Placed[]) {
+    if (this.stroke !== 'changed') this.undoable.push(this.placed)
     if (this.stroke === 'unchanged') this.stroke = 'changed'
-    this.blocks = blocks
+    this.placed = placed
   }
 }
 
-function overlaps(a: Pick<Block, 'origin' | 'size'>, b: Pick<Block, 'origin' | 'size'>) {
-  return (
-    a.origin.x < b.origin.x + b.size.width &&
-    b.origin.x < a.origin.x + a.size.width &&
-    a.origin.z < b.origin.z + b.size.depth &&
-    b.origin.z < a.origin.z + a.size.depth
-  )
+type Placed = { block: Block; erased: Spot[] }
+
+function covers({ block, erased }: Placed, spot: Spot) {
+  const { origin, size } = block
+  const inside =
+    spot.x >= origin.x && spot.x < origin.x + size.width && spot.z >= origin.z && spot.z < origin.z + size.depth
+  return inside && !erased.some((gone) => isSameSpot(gone, spot))
+}
+
+function spotsOf({ origin, size }: Block) {
+  return Array.from({ length: size.width * size.depth }, (_, index) => ({
+    x: origin.x + (index % size.width),
+    z: origin.z + Math.floor(index / size.width),
+  }))
+}
+
+function cutPiece(block: Block, spot: Spot): Piece {
+  if (block.kind === 'cube') return { kind: 'cube', spot, height: block.size.height }
+  const { origin, size, facing } = block
+  const length = facing === 'east' || facing === 'west' ? size.width : size.depth
+  const step = {
+    east: spot.x - origin.x,
+    west: origin.x + size.width - 1 - spot.x,
+    south: spot.z - origin.z,
+    north: origin.z + size.depth - 1 - spot.z,
+  }[facing]
+  return {
+    kind: 'ramp',
+    spot,
+    facing,
+    low: (size.height * step) / length,
+    high: (size.height * (step + 1)) / length,
+  }
+}
+
+function isSameSpot(a: Spot, b: Spot) {
+  return a.x === b.x && a.z === b.z
 }
