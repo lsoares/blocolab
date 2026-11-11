@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { buildLoopAround, CircuitPage } from './CircuitPage.ts'
+import { GamePage } from '../GamePage.ts'
+import { buildLoopAround } from './buildLoopAround.ts'
 
 test('tapping the board places the chosen piece', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
 
@@ -12,7 +13,7 @@ test('tapping the board places the chosen piece', async ({ page }) => {
 })
 
 test('tapping with the wire does not leave a lone wire', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
 
   await circuit.getBoard().click()
@@ -21,7 +22,7 @@ test('tapping with the wire does not leave a lone wire', async ({ page }) => {
 })
 
 test('a wire appears while it is still being dragged', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Fio')
   await circuit.pressBoardAt(-100, 0)
@@ -32,7 +33,7 @@ test('a wire appears while it is still being dragged', async ({ page }) => {
 })
 
 test('a dragged wire can turn corners', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Fio')
   await circuit.pressBoardAt(-100, -60)
@@ -45,7 +46,7 @@ test('a dragged wire can turn corners', async ({ page }) => {
 })
 
 test('undo takes back a whole dragged wire', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Fio')
   await circuit.pressBoardAt(-100, 0)
@@ -58,7 +59,7 @@ test('undo takes back a whole dragged wire', async ({ page }) => {
 })
 
 test('the eraser takes the tapped piece away', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
@@ -70,7 +71,7 @@ test('the eraser takes the tapped piece away', async ({ page }) => {
 })
 
 test('undo takes back the last piece', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
@@ -81,7 +82,7 @@ test('undo takes back the last piece', async ({ page }) => {
 })
 
 test('a closed loop lights the lamp', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
 
@@ -89,7 +90,7 @@ test('a closed loop lights the lamp', async ({ page }) => {
 })
 
 test('a closed loop makes the motor run', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Motor')
 
@@ -97,7 +98,7 @@ test('a closed loop makes the motor run', async ({ page }) => {
 })
 
 test('a closed loop makes the buzzer sound', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Campainha')
 
@@ -105,7 +106,7 @@ test('a closed loop makes the buzzer sound', async ({ page }) => {
 })
 
 test('a gap in the loop puts the lamp out', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
   await circuit.choosePiece('Borracha')
@@ -117,7 +118,7 @@ test('a gap in the loop puts the lamp out', async ({ page }) => {
 })
 
 test('an open switch keeps the lamp dark', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
   await circuit.choosePiece('Borracha')
@@ -131,7 +132,7 @@ test('an open switch keeps the lamp dark', async ({ page }) => {
 })
 
 test('closing the switch lights the lamp', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
   await circuit.choosePiece('Borracha')
@@ -146,7 +147,7 @@ test('closing the switch lights the lamp', async ({ page }) => {
 })
 
 test('a wire straight across the battery is a short circuit', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
   await circuit.placeAtCursor()
@@ -167,7 +168,7 @@ test('a wire straight across the battery is a short circuit', async ({ page }) =
 })
 
 test('the wire is the tool chosen when the game opens', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
 
   await circuit.open()
 
@@ -175,7 +176,7 @@ test('the wire is the tool chosen when the game opens', async ({ page }) => {
 })
 
 test('hovering a piece says what it is', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
@@ -186,7 +187,7 @@ test('hovering a piece says what it is', async ({ page }) => {
 })
 
 test('placing a piece over another one replaces it', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
@@ -199,7 +200,7 @@ test('placing a piece over another one replaces it', async ({ page }) => {
 })
 
 test('pieces turn by themselves to meet the wires around them', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await circuit.choosePiece('Pilha')
   await circuit.moveCursor('ArrowLeft')
@@ -226,7 +227,7 @@ test('pieces turn by themselves to meet the wires around them', async ({ page })
 })
 
 test('hovering a tool says its name', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
 
   await circuit.hoverTool('Lâmpada')

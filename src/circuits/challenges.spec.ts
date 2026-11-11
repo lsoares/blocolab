@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { buildLoopAround, CircuitPage } from './CircuitPage.ts'
+import { GamePage } from '../GamePage.ts'
+import { buildLoopAround } from './buildLoopAround.ts'
 
 test('the first challenge asks to light the lamp', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
 
   await circuit.open()
 
@@ -10,7 +11,7 @@ test('the first challenge asks to light the lamp', async ({ page }) => {
 })
 
 test('the next challenge waits until the goal is reached', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
 
   await circuit.open()
 
@@ -18,7 +19,7 @@ test('the next challenge waits until the goal is reached', async ({ page }) => {
 })
 
 test('lighting the lamp completes the challenge', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
 
   await buildLoopAround(circuit, 'Lâmpada')
@@ -27,7 +28,7 @@ test('lighting the lamp completes the challenge', async ({ page }) => {
 })
 
 test('a loop that does not light the lamp leaves the challenge open', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
 
   await buildLoopAround(circuit, 'Campainha')
@@ -36,7 +37,7 @@ test('a loop that does not light the lamp leaves the challenge open', async ({ p
 })
 
 test('the next challenge starts on a clean board', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
 
@@ -46,7 +47,7 @@ test('the next challenge starts on a clean board', async ({ page }) => {
 })
 
 test('the next challenge asks for the motor', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
 
@@ -56,7 +57,7 @@ test('the next challenge asks for the motor', async ({ page }) => {
 })
 
 test('the challenge reached is remembered on the next visit', async ({ page }) => {
-  const circuit = new CircuitPage(page)
+  const circuit = new GamePage(page)
   await circuit.open()
   await buildLoopAround(circuit, 'Lâmpada')
   await circuit.getNextChallengeButton().click()

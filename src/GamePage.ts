@@ -1,10 +1,10 @@
 import type { Page } from '@playwright/test'
 
-export class CircuitPage {
+export class GamePage {
   constructor(private readonly page: Page) {}
 
-  async open() {
-    await this.page.goto('/')
+  async open(gameId = '') {
+    await this.page.goto(`/#${gameId}`)
   }
 
   async choosePiece(name: string) {
@@ -74,27 +74,4 @@ export class CircuitPage {
   async reload() {
     await this.page.reload()
   }
-}
-
-export async function buildLoopAround(circuit: CircuitPage, bottomPiece: string) {
-  await circuit.choosePiece('Fio')
-  await circuit.moveCursor('ArrowUp', 'ArrowLeft')
-  await circuit.placeAtCursor()
-  await circuit.moveCursor('ArrowDown')
-  await circuit.placeAtCursor()
-  await circuit.moveCursor('ArrowDown')
-  await circuit.placeAtCursor()
-  await circuit.choosePiece(bottomPiece)
-  await circuit.moveCursor('ArrowRight')
-  await circuit.placeAtCursor()
-  await circuit.choosePiece('Fio')
-  await circuit.moveCursor('ArrowRight')
-  await circuit.placeAtCursor()
-  await circuit.moveCursor('ArrowUp')
-  await circuit.placeAtCursor()
-  await circuit.moveCursor('ArrowUp')
-  await circuit.placeAtCursor()
-  await circuit.choosePiece('Pilha')
-  await circuit.moveCursor('ArrowLeft')
-  await circuit.placeAtCursor()
 }

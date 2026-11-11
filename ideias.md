@@ -53,6 +53,28 @@ Próximas ideias deste jogo: mais pilhas e polaridade a sério para os mais velh
 contrário), resistência, íman, ventoinha no motor, volume da campainha pela força, e objetos
 que caem no tabuleiro (o muro serve para isso).
 
+## Segundo jogo: Comboio (2026-11-11)
+
+Inspirado num conjunto de comboio de madeira (carris com curvas, pontes, túneis, edifícios,
+árvores e sinais que fazem o comboio seguir o caminho e parar). Usa **a mesma dinâmica** dos
+circuitos: tabuleiro com muro, peças em grelha, comportamento ao vivo, desafios, nome ao passar
+o rato. Um alternador no topo da barra muda de jogo (cada jogo tem a sua página: `#circuitos` e
+`#comboio`, e o seu próprio progresso).
+
+- **Carril** desenha-se a arrastar, ao vivo e com curvas; liga-se e forma-se sozinho (reta,
+  curva em arco, T, cruzamento) como o fio dos circuitos. **Comboio** (locomotiva e duas
+  carruagens) põe-se num carril e anda sozinho: numa volta fechada dá voltas; numa linha com
+  fim pára no fim (como "circuito aberto"). **Estação** faz o comboio esperar 2 segundos,
+  **túnel** esconde-o, **semáforo** (toca para ficar verde) pára-o, **árvore** é decoração.
+- Num T o comboio segue em frente; vindo da perna do T, alterna entre os dois lados. Num
+  cruzamento segue em frente.
+- Peças com duas pontas (estação, túnel, semáforo) viram-se sozinhas para encostar aos carris.
+- 8 desafios: andar, dar a volta, estação, túnel, semáforo vermelho, volta com semáforo verde,
+  oito (cruzamento nos dois sentidos) e árvores ao lado da linha.
+- Ideias a seguir: pontes (carril elevado) e barreiras (passagem de nível), agulhas (desvios
+  que se mudam a tocar), vários comboios, carga que se deixa na estação, passageiros, mais
+  carruagens, apitos, estações com nome, e comboios a não chocarem.
+
 ## Como evoluir este jogo e que outros jogos fazer (2026-11-11)
 
 Evoluir os circuitos (do mais barato ao mais caro):
