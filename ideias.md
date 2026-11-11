@@ -8,6 +8,30 @@ Nome provisório da pasta: `blocolab`.
 
 ---
 
+## Pivot (2026-11-11): circuitos em vez de blocos
+
+Deixámos os cubos, as rampas e as bolas (ficam no histórico do git, e a ventoinha ficou
+a meio num `git stash`). O jogo passa a ser **como um kit de circuitos de encaixar**
+(referência: kits tipo "Snap Circuits" com placa de base):
+
+- Um **tabuleiro** plano com grelha de encaixes e **um muro à volta**, para os objetos
+  do jogo futuro não caírem.
+- **6 peças**: pilha, fio, interruptor, lâmpada, motor com hélice, campainha.
+- A corrente é **ao vivo**: não há ▶. Fecha o circuito e a lâmpada acende, o motor roda,
+  a campainha toca. Um interruptor aberto corta o circuito; um fio direto de uma ponta
+  da pilha à outra é **curto-circuito**.
+- Gestos, sem botões a mais: tocar põe a peça; arrastar com o fio desenha um troço;
+  arrastar com outra peça decide para onde ela está virada; tocar num interruptor
+  liga/desliga; a borracha apaga só o que toca.
+
+Próximas ideias deste jogo: desafios ("acende duas lâmpadas com uma só pilha"), lâmpadas
+em série vs. em paralelo (brilho), mais pilhas, resistência, íman, ventoinha no motor,
+som de verdade na campainha, e objetos que caem no tabuleiro (o muro serve para isso).
+
+As secções abaixo (blocos, rampas, água) são ideias anteriores; guardam-se para outros jogos.
+
+---
+
 ## 1. Princípio de design
 
 - **Fazer muito com pouco.** Cada bloco tem _uma_ regra simples; o interessante nasce da combinação
