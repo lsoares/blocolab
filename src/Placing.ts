@@ -8,7 +8,7 @@ export class Placing {
   private gesture: 'none' | 'turning' | 'wiring' | 'erasing' = 'none'
   private gestureStart: Spot = { x: 0, z: 0 }
   private wiredUpTo: Spot = { x: 0, z: 0 }
-  private wireToReplaceOnRelease?: Spot
+  private wireStarted = false
   private cursor: Spot
   private cursorAxis: Axis = 'horizontal'
 
@@ -59,6 +59,7 @@ export class Placing {
     if (this.gesture === 'wiring') return this.extendWire(spot)
     if (this.gesture === 'turning') return this.previewAt(this.gestureStart, axisOfDrag(this.gestureStart, spot))
     if (this.tool === 'eraser') return this.previewErasure(spot)
+    if (this.tool === 'wire') return this.view.hideGhost()
     this.previewAt(spot, 'horizontal')
   }
 
@@ -66,7 +67,7 @@ export class Placing {
     if (!event.isPrimary) return
     if (this.gesture === 'turning')
       this.placeAt(this.gestureStart, axisOfDrag(this.gestureStart, this.findSpot(event) ?? this.gestureStart))
-    if (this.gesture === 'wiring') this.finishWiring()
+    if (this.gesture === 'wiring') this.board.endStroke()
     if (this.gesture === 'erasing') this.board.endStroke()
     this.gesture = 'none'
   }
@@ -80,30 +81,22 @@ export class Placing {
   private startWiring(spot: Spot) {
     this.gesture = 'wiring'
     this.wiredUpTo = spot
+    this.wireStarted = false
     this.board.startStroke()
-    if (this.board.hasRoomFor(spot)) this.board.placePiece({ kind: 'wire', spot })
-    else this.wireToReplaceOnRelease = spot
-    this.onBoardChanged()
     this.view.hideGhost()
   }
 
   private extendWire(spot: Spot) {
     if (spot.x === this.wiredUpTo.x && spot.z === this.wiredUpTo.z) return
-    this.wireToReplaceOnRelease = undefined
-    for (const next of pathBetween(this.wiredUpTo, spot)) {
-      if (this.board.hasRoomFor(next)) this.board.placePiece({ kind: 'wire', spot: next })
+    const cells = this.wireStarted
+      ? pathBetween(this.wiredUpTo, spot)
+      : [this.wiredUpTo, ...pathBetween(this.wiredUpTo, spot)]
+    for (const cell of cells) {
+      if (this.board.hasRoomFor(cell)) this.board.placePiece({ kind: 'wire', spot: cell })
     }
+    this.wireStarted = true
     this.wiredUpTo = spot
     this.onBoardChanged()
-  }
-
-  private finishWiring() {
-    if (this.wireToReplaceOnRelease) {
-      this.board.placePiece({ kind: 'wire', spot: this.wireToReplaceOnRelease })
-      this.wireToReplaceOnRelease = undefined
-      this.onBoardChanged()
-    }
-    this.board.endStroke()
   }
 
   private startErasing(spot: Spot) {

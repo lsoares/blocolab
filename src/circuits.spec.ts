@@ -4,10 +4,20 @@ import { buildLoopAround, CircuitPage } from './CircuitPage.ts'
 test('tapping the board places the chosen piece', async ({ page }) => {
   const circuit = new CircuitPage(page)
   await circuit.open()
+  await circuit.choosePiece('Pilha')
 
   await circuit.getBoard().click()
 
   await expect(circuit.getStatus()).toHaveText('1 peça')
+})
+
+test('tapping with the wire does not leave a lone wire', async ({ page }) => {
+  const circuit = new CircuitPage(page)
+  await circuit.open()
+
+  await circuit.getBoard().click()
+
+  await expect(circuit.getStatus()).toHaveText('0 peças')
 })
 
 test('a wire appears while it is still being dragged', async ({ page }) => {
@@ -50,6 +60,7 @@ test('undo takes back a whole dragged wire', async ({ page }) => {
 test('the eraser takes the tapped piece away', async ({ page }) => {
   const circuit = new CircuitPage(page)
   await circuit.open()
+  await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
   await circuit.choosePiece('Borracha')
 
@@ -61,6 +72,7 @@ test('the eraser takes the tapped piece away', async ({ page }) => {
 test('undo takes back the last piece', async ({ page }) => {
   const circuit = new CircuitPage(page)
   await circuit.open()
+  await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
 
   await page.getByRole('button', { name: 'Desfazer' }).click()
@@ -176,6 +188,7 @@ test('hovering a piece says what it is', async ({ page }) => {
 test('placing a piece over another one replaces it', async ({ page }) => {
   const circuit = new CircuitPage(page)
   await circuit.open()
+  await circuit.choosePiece('Pilha')
   await circuit.getBoard().click()
   await circuit.choosePiece('Lâmpada')
   await circuit.getBoard().click()
