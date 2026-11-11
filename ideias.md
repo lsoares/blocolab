@@ -53,6 +53,21 @@ Próximas ideias deste jogo: mais pilhas e polaridade a sério para os mais velh
 contrário), resistência, íman, ventoinha no motor, volume da campainha pela força, e objetos
 que caem no tabuleiro (o muro serve para isso).
 
+## Terceiro jogo: Água (2026-11-11)
+
+O circuito de água usa **exatamente a mesma lógica dos circuitos** (por isso o código é
+partilhado): a bomba empurra a água como a pilha empurra a corrente, os canos são os fios, a
+torneira é o interruptor, e o chafariz, a roda de água e o borbulhador são a lâmpada, o motor e
+a campainha. Série e paralelo, duas bombas, torneira geral e "sem resistência" (curto-circuito)
+funcionam como nos circuitos; só muda a roupa, os nomes e os 14 desafios. Serve para a criança
+ver que **a água e a eletricidade se comportam da mesma maneira**.
+
+- Os canos são transparentes e só mostram água (com gotas a mexer) num circuito fechado; o
+  chafariz jorra mais alto com mais pressão e a roda gira mais depressa.
+- Ideias a seguir: setas a mostrar o sentido da água, som de água, depósito com nível que
+  desce, pressão e caudal com números para os mais velhos, vazamentos (cano partido), e
+  ligar a água ao comboio (ponte sobre o rio com cheias).
+
 ## Segundo jogo: Comboio (2026-11-11)
 
 Inspirado num conjunto de comboio de madeira (carris com curvas, pontes, túneis, edifícios,
@@ -105,8 +120,7 @@ Evoluir os circuitos (do mais barato ao mais caro):
 
 Outros jogos com o mesmo motor (tabuleiro com muro, peças em grelha, regras sem física pesada):
 
-- **Circuito de água**: tubos, bombas (motor), torneiras (interruptor); a água ensina a eletricidade
-  por analogia e mostra pressão e caudal.
+- **Circuito de água** (feito): ver mais acima.
 - **Pistas de berlindes** no tabuleiro com muro, com íman, ventoinha e rampas (a física das fatias
   anteriores volta aqui).
 - **Robô e setas** (programação): o robô percorre o tabuleiro e liga/desliga circuitos.
