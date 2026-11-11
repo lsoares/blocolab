@@ -1,10 +1,11 @@
 import './style.css'
 import { circuits } from './circuits/Circuits.ts'
 import type { Game, GameSession } from './Game.ts'
+import { robots } from './robots/Robots.ts'
 import { trains } from './trains/Trains.ts'
 import { waters } from './waters/Waters.ts'
 
-const games: Game[] = [circuits, waters, trains]
+const games: Game[] = [circuits, waters, trains, robots]
 const game = games.find(({ id }) => `#${id}` === location.hash) ?? games[0]
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
@@ -27,6 +28,10 @@ function showTheGames(all: Game[], chosen: Game) {
 
 function showThePieces(chosen: Game) {
   const pieces = document.querySelector('.pieces')
+  if (chosen.tools.length === 0) {
+    pieces?.setAttribute('hidden', '')
+    document.querySelector('.corrections [data-name="Borracha"]')?.setAttribute('hidden', '')
+  }
   if (chosen.tools.length > 8) pieces?.setAttribute('data-columns', '2')
   for (const [index, tool] of chosen.tools.entries()) {
     pieces?.insertAdjacentHTML(
@@ -65,7 +70,8 @@ function startGame(chosen: Game, canvas: HTMLCanvasElement) {
   }
   const started = chosen.startSession(canvas, refresh)
   session = started
-  started.chooseTool(chosen.tools[0].value)
+  started.startChallenge?.(level)
+  if (chosen.tools.length > 0) started.chooseTool(chosen.tools[0].value)
   refresh()
 
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
@@ -76,6 +82,7 @@ function startGame(chosen: Game, canvas: HTMLCanvasElement) {
     achieved = false
     rememberLevel(chosen, level)
     started.startOver()
+    started.startChallenge?.(level)
     canvas.focus()
   })
   undoButton?.addEventListener('click', () => started.undo())

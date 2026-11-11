@@ -6,6 +6,7 @@ export type GameSession = {
   canUndo(): boolean
   undo(): void
   startOver(): void
+  startChallenge?(level: number): void
   chooseTool(value: string): void
   nameUnder(pointer: PointerEvent): string | undefined
 }
