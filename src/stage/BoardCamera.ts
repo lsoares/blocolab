@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { BoardSize } from './Board.ts'
+import type { BoardSize } from './Grid.ts'
 
 export class BoardCamera {
   readonly camera = new THREE.OrthographicCamera()

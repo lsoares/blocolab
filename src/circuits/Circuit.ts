@@ -1,6 +1,5 @@
-import type { Piece, Spot } from './Board.ts'
-
-export type Side = 'north' | 'east' | 'south' | 'west'
+import { opposite, type Side, type Spot, stepFrom } from '../stage/Grid.ts'
+import type { Piece } from './Board.ts'
 
 export type CircuitState = { short: boolean; powered: Spot[]; strengths: { spot: Spot; strength: number }[] }
 
@@ -74,16 +73,9 @@ function countLinks(piece: Piece, pieceAt: Map<string, Piece>) {
 
 type Branch = { piece: Piece; from: string; to: string }
 
-const opposite: Record<Side, Side> = { north: 'south', east: 'west', south: 'north', west: 'east' }
-
 function terminalSidesOf(piece: Piece): Side[] {
   if (piece.kind === 'wire') return ['north', 'east', 'south', 'west']
   return piece.axis === 'horizontal' ? ['west', 'east'] : ['north', 'south']
-}
-
-function stepFrom({ x, z }: Spot, side: Side): Spot {
-  const steps = { north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0] }[side]
-  return { x: x + steps[0], z: z + steps[1] }
 }
 
 function terminalOf(piece: Piece, side: Side) {

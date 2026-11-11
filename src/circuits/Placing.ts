@@ -1,4 +1,5 @@
-import type { Axis, Board, Piece, Spot } from './Board.ts'
+import type { Axis, Spot } from '../stage/Grid.ts'
+import type { Board, Piece } from './Board.ts'
 import type { BoardView } from './BoardView.ts'
 
 export type Tool = Piece['kind'] | 'eraser'

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import type { Board, BoardSize, Piece, Spot } from './Board.ts'
-import { BoardCamera } from './BoardCamera.ts'
-import type { Side } from './Circuit.ts'
+import { BoardCamera } from '../stage/BoardCamera.ts'
+import type { BoardSize, Side, Spot } from '../stage/Grid.ts'
+import type { Board, Piece } from './Board.ts'
 
 export class BoardView {
   readonly camera: BoardCamera

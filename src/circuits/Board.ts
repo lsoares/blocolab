@@ -1,15 +1,10 @@
-import { analyzeCircuit, type CircuitState, findLinkedSides, type Side, turnToMeetNeighbours } from './Circuit.ts'
-
-export type Spot = { x: number; z: number }
-
-export type Axis = 'horizontal' | 'vertical'
+import type { Axis, BoardSize, Side, Spot } from '../stage/Grid.ts'
+import { analyzeCircuit, type CircuitState, findLinkedSides, turnToMeetNeighbours } from './Circuit.ts'
 
 export type Piece =
   | { kind: 'wire'; spot: Spot }
   | { kind: 'switch'; spot: Spot; axis: Axis; closed: boolean }
   | { kind: 'battery' | 'lamp' | 'motor' | 'buzzer'; spot: Spot; axis: Axis }
-
-export type BoardSize = { columns: number; rows: number }
 
 export class Board {
   readonly size: BoardSize

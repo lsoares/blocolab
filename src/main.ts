@@ -1,10 +1,10 @@
 import './style.css'
-import { Board, type Piece } from './Board.ts'
-import { measureBoardThatFits } from './BoardCamera.ts'
-import { BoardView } from './BoardView.ts'
-import { BuzzerSound } from './BuzzerSound.ts'
-import { challenges, isMet } from './Challenges.ts'
-import { Placing, type Tool } from './Placing.ts'
+import { Board, type Piece } from './circuits/Board.ts'
+import { BoardView } from './circuits/BoardView.ts'
+import { BuzzerSound } from './circuits/BuzzerSound.ts'
+import { challenges, isMet } from './circuits/Challenges.ts'
+import { Placing, type Tool } from './circuits/Placing.ts'
+import { measureBoardThatFits } from './stage/BoardCamera.ts'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world')
 if (!canvas) throw new Error('The page has no #world canvas')
